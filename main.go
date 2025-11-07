@@ -18,7 +18,7 @@ import (
 
 var (
 	host  = flag.String("host", "localhost", "host to connect to/listen on")
-	port  = flag.Int("port", 8000, "port number to connect to/listen on")
+	port  = flag.Int("port", 8080, "port number to connect to/listen on")
 	proto = flag.String("proto", "http", "if set, use as proto:// part of URL (ignored for server)")
 )
 
