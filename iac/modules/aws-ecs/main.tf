@@ -152,16 +152,12 @@ resource "aws_lb_target_group" "main" {
 }
 
 resource "aws_security_group" "load_balancer_sg" {
-  name        = "allow_tls"
+  name        = "allow_http"
   description = "Allow HTTP inbound traffic and all outbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
   tags = {
     Name = "allow_http"
-  }
-
-  lifecycle {
-    create_before_destroy = true
   }
 }
 
