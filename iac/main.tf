@@ -23,7 +23,7 @@ data "github_repository" "main" {
 }
 
 module "ecs_cluster" {
-  source                 = "../aws-ecs"
+  source                 = "./modules/aws-ecs"
   github_repo_name       = data.github_repository.main.full_name
   ecs_task_environment_variables = []
 }
