@@ -171,6 +171,8 @@ resource "aws_lb_target_group" "main" {
     path = "/health"
   }
 
+  deregistration_delay = 60
+
   lifecycle {
     create_before_destroy = true
   }
