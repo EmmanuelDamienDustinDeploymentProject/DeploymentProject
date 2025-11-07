@@ -4,10 +4,11 @@
 FROM golang:1.24.5 AS build-stage
 
 # https://docs.docker.com/guides/zscaler/#building-with-the-certificate
-COPY trusted_certs.crt /usr/local/share/ca-certificates/zscaler-root-ca.crt
-RUN apt-get update && \
-    apt-get install -y ca-certificates && \
-    update-ca-certificates
+# You'll need to create trusted_certs.crt to build locally with zscaler (HP)
+#COPY trusted_certs.crt /usr/local/share/ca-certificates/zscaler-root-ca.crt
+#RUN apt-get update && \
+#    apt-get install -y ca-certificates && \
+#    update-ca-certificates
 
 # To make things easier when running the rest of your commands, create a directory inside the image that you're building.
 # This also instructs Docker to use this directory as the default destination for all subsequent commands.
