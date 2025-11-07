@@ -20,9 +20,9 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ingress_to_the_ecs_contain
   security_group_id            = aws_security_group.ecs_service_sg.id
   referenced_security_group_id = aws_security_group.load_balancer_sg.id
 
-  from_port   = 8008
+  from_port   = 80
   ip_protocol = "tcp"
-  to_port     = 8008
+  to_port     = 80
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_ecs_service_to_egress_to_everything" {
@@ -54,7 +54,7 @@ resource "aws_ecs_service" "main" {
   load_balancer {
     target_group_arn = aws_lb_target_group.main.arn
     container_name   = "server"
-    container_port   = 8008
+    container_port   = 80
   }
 }
 
