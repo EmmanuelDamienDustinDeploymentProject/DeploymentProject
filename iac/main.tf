@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.0"
     }
+    github = {
+      source  = "integrations/github"
+      version = "6.4.0"
+    }
   }
 }
 
@@ -12,7 +16,12 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# Create a VPC
-resource "aws_vpc" "example" {
-  cidr_block = "10.0.0.0/16"
+data "github_repository" "main" {
+  full_name = "EmmanuelDamienDustinDeploymentProject/DeploymentProject"
+}
+
+module "ecs_cluster" {
+  source                 = "../aws-ecs"
+  github_repo_name       = data.github_repository.main.full_name
+  ecs_task_environment_variables = []
 }
