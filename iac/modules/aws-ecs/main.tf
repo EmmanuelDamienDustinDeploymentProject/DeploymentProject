@@ -97,6 +97,27 @@ resource "aws_iam_role" "task_role" {
   assume_role_policy = data.aws_iam_policy_document.task_execution_role_policy.json
 }
 
+data "aws_iam_policy_document" "task_logging_policy_document" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+    ]
+    resources = [aws_cloudwatch_log_group.ecs_task.arn]
+  }
+}
+
+resource "aws_iam_policy" "task_logging_policy" {
+  name   = format("tf-ecs-%s-logging", data.github_repository.main.name)
+  policy = data.aws_iam_policy_document.task_logging_policy_document.json
+}
+
+resource "aws_iam_role_policy_attachment" "task_logging_attachment" {
+  role       = aws_iam_role.task_role.name
+  policy_arn = aws_iam_policy.task_logging_policy.arn
+}
+
 resource "aws_cloudwatch_log_group" "ecs_task" {
   name              = "/ecs/${aws_ecs_cluster.main.name}/${data.github_repository.main.name}"
   retention_in_days = 5
