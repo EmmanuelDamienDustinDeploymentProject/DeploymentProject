@@ -120,9 +120,10 @@ resource "aws_ecs_task_definition" "main" {
       environment = var.ecs_task_environment_variables
       essential   = true
       portMappings = [
+        # TOD: We might need to change this when we use our own code instead of nginx
         {
-          containerPort = 8008
-          hostPort      = 8008
+          containerPort = 80
+          hostPort      = 80
         }
       ]
 
