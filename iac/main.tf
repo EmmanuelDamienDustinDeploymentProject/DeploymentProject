@@ -16,6 +16,8 @@ provider "aws" {
   region = "us-east-1"
 }
 
+provider "github" {}
+
 data "github_repository" "main" {
   full_name = "EmmanuelDamienDustinDeploymentProject/DeploymentProject"
 }
