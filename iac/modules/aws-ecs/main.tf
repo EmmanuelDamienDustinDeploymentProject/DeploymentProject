@@ -54,7 +54,7 @@ resource "aws_ecs_service" "main" {
   load_balancer {
     target_group_arn = aws_lb_target_group.main.arn
     container_name   = "server"
-    container_port   = 80
+    container_port   = 8080
   }
 }
 
@@ -122,8 +122,8 @@ resource "aws_ecs_task_definition" "main" {
       portMappings = [
         # TOD: We might need to change this when we use our own code instead of nginx
         {
-          containerPort = 80
-          hostPort      = 80
+          containerPort = 8080
+          hostPort      = 8080
         }
       ]
 
@@ -141,7 +141,7 @@ resource "aws_ecs_task_definition" "main" {
 
 resource "aws_lb_target_group" "main" {
   name_prefix = "tf-ecs"
-  port        = 80
+  port        = 8080
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default.id
   target_type = "ip"
