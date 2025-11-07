@@ -2,7 +2,7 @@
 
 ## Usage
 ```bash
-go run . server
+go run .
 ```
 
 Now, add the mcp server like this:
