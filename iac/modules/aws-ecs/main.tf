@@ -153,20 +153,20 @@ resource "aws_lb_target_group" "main" {
 
 resource "aws_security_group" "load_balancer_sg" {
   name        = "allow_tls"
-  description = "Allow TLS inbound traffic and all outbound traffic"
+  description = "Allow HTTP inbound traffic and all outbound traffic"
   vpc_id      = data.aws_vpc.default.id
 
   tags = {
-    Name = "allow_tls"
+    Name = "allow_http"
   }
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_http_ipv4" {
   security_group_id = aws_security_group.load_balancer_sg.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 443
+  from_port         = 80
   ip_protocol       = "tcp"
-  to_port           = 443
+  to_port           = 80
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_egress_all_traffic_ipv4" {
