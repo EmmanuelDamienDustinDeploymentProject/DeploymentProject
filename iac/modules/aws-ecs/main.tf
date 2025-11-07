@@ -116,7 +116,7 @@ resource "aws_ecs_task_definition" "main" {
   container_definitions = jsonencode([
     {
       name        = "server"
-      image       = "f000/browser-mmo:latest"
+      image       = "dustinalandzes384/deployment-project:latest"
       environment = var.ecs_task_environment_variables
       essential   = true
       portMappings = [
