@@ -146,6 +146,10 @@ resource "aws_lb_target_group" "main" {
   vpc_id      = data.aws_vpc.default.id
   target_type = "ip"
 
+  health_check {
+    path = "/health"
+  }
+
   lifecycle {
     create_before_destroy = true
   }

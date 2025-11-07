@@ -110,6 +110,11 @@ func getTime(ctx context.Context, req *mcp.CallToolRequest, params *GetTimeParam
 	}, nil, nil
 }
 
+func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("OK"))
+}
+
 func runServer(url string) {
 	// Create an MCP server.
 	server := mcp.NewServer(&mcp.Implementation{
@@ -128,10 +133,15 @@ func runServer(url string) {
 		return server
 	}, nil)
 
-	handlerWithLogging := loggingHandler(handler)
+	mux := http.NewServeMux()
+	mux.Handle("/", handler)
+	mux.HandleFunc("/health", healthCheckHandler)
+
+	handlerWithLogging := loggingHandler(mux)
 
 	log.Printf("MCP server listening on %s", url)
 	log.Printf("Available tool: cityTime (cities: nyc, sf, boston)")
+	log.Printf("Health check available at /health")
 
 	// Start the HTTP server with logging handler.
 	if err := http.ListenAndServe(url, handlerWithLogging); err != nil {
