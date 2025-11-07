@@ -159,6 +159,10 @@ resource "aws_security_group" "load_balancer_sg" {
   tags = {
     Name = "allow_http"
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_http_ipv4" {
