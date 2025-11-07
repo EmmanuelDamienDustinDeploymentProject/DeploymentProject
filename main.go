@@ -10,52 +10,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 var (
-	host  = flag.String("host", "localhost", "host to connect to/listen on")
-	port  = flag.Int("port", 8080, "port number to connect to/listen on")
-	proto = flag.String("proto", "http", "if set, use as proto:// part of URL (ignored for server)")
+	host = flag.String("host", "localhost", "host to connect to/listen on")
+	port = flag.Int("port", 8080, "port number to connect to/listen on")
 )
 
 func main() {
-	out := flag.CommandLine.Output()
-	flag.Usage = func() {
-		fmt.Fprintf(out, "Usage: %s <client|server> [-proto <http|https>] [-port <port] [-host <host>]\n\n", os.Args[0])
-		fmt.Fprintf(out, "This program demonstrates MCP over HTTP using the streamable transport.\n")
-		fmt.Fprintf(out, "It can run as either a server or client.\n\n")
-		fmt.Fprintf(out, "Options:\n")
-		flag.PrintDefaults()
-		fmt.Fprintf(out, "\nExamples:\n")
-		fmt.Fprintf(out, "  Run as server:  %s server\n", os.Args[0])
-		fmt.Fprintf(out, "  Run as client:  %s client\n", os.Args[0])
-		fmt.Fprintf(out, "  Custom host/port: %s -port 9000 -host 0.0.0.0 server\n", os.Args[0])
-		os.Exit(1)
-	}
-	flag.Parse()
-
-	if flag.NArg() != 1 {
-		fmt.Fprintf(out, "Error: Must specify 'client' or 'server' as first argument\n")
-		flag.Usage()
-	}
-	mode := flag.Arg(0)
-
-	switch mode {
-	case "server":
-		if *proto != "http" {
-			log.Fatalf("Server only works with 'http' (you passed proto=%s)", *proto)
-		}
-		runServer(fmt.Sprintf("%s:%d", *host, *port))
-	case "client":
-		runClient(fmt.Sprintf("%s://%s:%d", *proto, *host, *port))
-	default:
-		fmt.Fprintf(os.Stderr, "Error: Invalid mode '%s'. Must be 'client' or 'server'\n\n", mode)
-		flag.Usage()
-	}
+	runServer(fmt.Sprintf("%s:%d", *host, *port))
 }
 
 // GetTimeParams defines the parameters for the cityTime tool.
