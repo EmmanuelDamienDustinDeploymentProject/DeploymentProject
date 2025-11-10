@@ -45,3 +45,19 @@ https://github.com/modelcontextprotocol/go-sdk
 https://registry.terraform.io/providers/hashicorp/aws/latest/docs
 https://registry.terraform.io/providers/integrations/github/latest/docs
 https://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html
+
+## Information
+
+https://github.com/modelcontextprotocol/go-sdk/tree/main/docs
+
+
+https://modelcontextprotocol.io/docs/getting-started/intro
+https://modelcontextprotocol.io/tutorials/building-mcp-with-llms
+https://modelcontextprotocol.io/specification/2025-06-18
+
+https://code.visualstudio.com/docs/copilot/customization/mcp-servers
+https://code.visualstudio.com/api/extension-guides/ai/mcp
+https://github.com/microsoft/mcp-for-beginners
+https://github.com/mcp
+https://github.com/modelcontextprotocol/servers
+https://hub.docker.com/mcp
