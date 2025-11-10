@@ -31,3 +31,17 @@ After starting the go server, run this npx command and once the browser opens cl
 ```bash
 npx @modelcontextprotocol/inspector --config mcp-inspector-config.json 
 ```
+
+## Libraries
+
+https://pkg.go.dev/net/http
+https://pkg.go.dev/log
+https://pkg.go.dev/fmt
+https://pkg.go.dev/context
+https://pkg.go.dev/time
+
+https://github.com/modelcontextprotocol/go-sdk
+
+https://registry.terraform.io/providers/hashicorp/aws/latest/docs
+https://registry.terraform.io/providers/integrations/github/latest/docs
+https://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html
