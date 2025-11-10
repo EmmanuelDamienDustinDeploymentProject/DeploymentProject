@@ -15,6 +15,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+// TODO: Move this to environment variables
 var (
 	host = flag.String("host", "0.0.0.0", "host to connect to/listen on")
 	port = flag.Int("port", 8080, "port number to connect to/listen on")
