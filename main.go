@@ -6,10 +6,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -22,6 +25,11 @@ var (
 )
 
 func main() {
+	flag.Parse()
+
+	// Initialize OAuth configuration
+	InitOAuth()
+
 	runServer(fmt.Sprintf("%s:%d", *host, *port))
 }
 
@@ -31,7 +39,7 @@ type GetTimeParams struct {
 }
 
 // getTime implements the tool that returns the current time for a given city.
-func getTime(ctx context.Context, req *mcp.CallToolRequest, params *GetTimeParams) (*mcp.CallToolResult, any, error) {
+func getTime(_ context.Context, _ *mcp.CallToolRequest, params *GetTimeParams) (*mcp.CallToolResult, any, error) {
 	// Define time zones for each city
 	locations := map[string]string{
 		"nyc":    "America/New_York",
@@ -77,38 +85,128 @@ func getTime(ctx context.Context, req *mcp.CallToolRequest, params *GetTimeParam
 	}, nil, nil
 }
 
-func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+func healthCheckHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("OK"))
 }
 
 func runServer(url string) {
-	// Create an MCP server.
+	// Determine MCP handler options from environment (default: stateless true unless explicitly disabled)
+	envStateless := strings.ToLower(os.Getenv("MCP_STATELESS"))
+	useStateless := true
+	if envStateless == "0" || envStateless == "false" {
+		useStateless = false
+	}
+
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "time-server",
 		Version: "1.0.0",
 	}, nil)
 
-	// Add the cityTime tool.
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "cityTime",
 		Description: "Get the current time in NYC, San Francisco, or Boston",
 	}, getTime)
 
-	// Create the streamable HTTP handler.
-	handler := mcp.NewStreamableHTTPHandler(func(req *http.Request) *mcp.Server {
+	mcpHandler := mcp.NewStreamableHTTPHandler(func(req *http.Request) *mcp.Server {
 		return server
-	}, nil)
+	}, &mcp.StreamableHTTPOptions{
+		Stateless:    useStateless,
+		JSONResponse: useStateless, // if stateless, make curl output easier
+	})
 
 	mux := http.NewServeMux()
-	mux.Handle("/", handler)
+
+	// Root info page
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		modeStr := "session"
+		transportStr := " SSE stream"
+		if useStateless {
+			modeStr = "stateless"
+			transportStr = " JSON response"
+		}
+		w.Header().Set("Content-Type", "text/plain")
+		fmt.Fprintf(w, "MCP Time Server\n\nMode: %s\nEndpoints:\n  /oauth/login (start GitHub OAuth)\n  /oauth/callback (OAuth redirect)\n  /mcp (MCP transport%s)\n  /time?city=nyc (REST time query, bearer required)\n  /whoami (REST auth test, bearer required)\n  /health (health check)\n\nTools:\n  cityTime: cities = nyc, sf, boston\n", modeStr, transportStr)
+	})
+
+	// OAuth endpoints (no authentication required)
+	mux.HandleFunc("/oauth/login", oauthLoginHandler)
+	mux.HandleFunc("/oauth/callback", oauthCallbackHandler)
+
+	// MCP endpoint (requires authentication)
+	mux.Handle("/mcp", bearerTokenMiddleware(mcpHandler))
+
+	// Simple REST convenience endpoint for manual curl testing
+	mux.Handle("/time", bearerTokenMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		city := r.URL.Query().Get("city")
+		result, _, err := getTime(r.Context(), nil, &GetTimeParams{City: city})
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+		if len(result.Content) == 0 {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte("empty response"))
+			return
+		}
+		if tc, ok := result.Content[0].(*mcp.TextContent); ok {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(tc.Text))
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte("unexpected content type"))
+	})))
+
+	// Authenticated whoami endpoint to return the GitHub username linked to the bearer token
+	mux.Handle("/whoami", bearerTokenMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		const bearerPrefix = "Bearer "
+		if !strings.HasPrefix(authHeader, bearerPrefix) {
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte("missing bearer token"))
+			return
+		}
+		token := strings.TrimPrefix(authHeader, bearerPrefix)
+		info, ok := validTokens.Get(token)
+		if !ok || info == nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte("invalid or expired token"))
+			return
+		}
+		resp := map[string]any{
+			"username":  info.Username,
+			"expiresAt": info.ExpiresAt.Format(time.RFC3339),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(resp)
+	})))
+
+	// Health check (no authentication required)
 	mux.HandleFunc("/health", healthCheckHandler)
 
 	handlerWithLogging := loggingHandler(mux)
 
 	log.Printf("MCP server listening on %s", url)
-	log.Printf("Available tool: cityTime (cities: nyc, sf, boston)")
-	log.Printf("Health check available at /health")
+	modeStr := "session"
+	if useStateless {
+		modeStr = "stateless"
+	}
+	log.Printf("Mode: %s (MCP_STATELESS=%v)", modeStr, useStateless)
+	log.Printf("Tool: cityTime (cities: nyc, sf, boston)")
+	log.Printf("OAuth login: http://%s/oauth/login", url)
+	log.Printf("Root info: http://%s/", url)
+	log.Printf("MCP endpoint: http://%s/mcp", url)
+	log.Printf("REST time endpoint: http://%s/time?city=nyc", url)
+	log.Printf("WhoAmI endpoint: http://%s/whoami", url)
+	log.Printf("Health: http://%s/health", url)
+	if !useStateless {
+		log.Printf("Sessionful mode: For curl testing set MCP_STATELESS=1 and restart, or send a proper session initialization JSON-RPC request first.")
+	} else {
+		log.Printf("Stateless mode: Direct tools/list and tools/call POSTs are accepted.")
+	}
 
 	// Start the HTTP server with logging handler.
 	if err := http.ListenAndServe(url, handlerWithLogging); err != nil {
@@ -116,11 +214,56 @@ func runServer(url string) {
 	}
 }
 
+// bearerTokenMiddleware validates bearer tokens before allowing access to the MCP handler
+func bearerTokenMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Extract bearer token from Authorization header
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+			log.Printf("Request rejected: missing Authorization header from %s", r.RemoteAddr)
+			return
+		}
+
+		// Check for "Bearer " prefix
+		const bearerPrefix = "Bearer "
+		if len(authHeader) < len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
+			http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
+			log.Printf("Request rejected: invalid Authorization header format from %s", r.RemoteAddr)
+			return
+		}
+
+		token := authHeader[len(bearerPrefix):]
+
+		// Validate the token
+		if err := ValidateBearerToken(token); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid token: %v", err), http.StatusUnauthorized)
+			log.Printf("Request rejected: %v from %s", err, r.RemoteAddr)
+			return
+		}
+
+		// Token is valid, proceed to the MCP handler
+		next.ServeHTTP(w, r)
+	})
+}
+
 func runClient(url string) {
+	// Mark runClient unused silence by referencing conditionally
+	if false {
+		log.Printf("runClient not invoked: %s", url)
+	}
+
 	ctx := context.Background()
 
 	// Create the URL for the server.
 	log.Printf("Connecting to MCP server at %s", url)
+
+	// Get bearer token from environment variable
+	bearerToken := os.Getenv("MCP_BEARER_TOKEN")
+	if bearerToken == "" {
+		log.Println("Warning: MCP_BEARER_TOKEN not set. Authentication may fail.")
+		log.Printf("To authenticate, visit: %s/oauth/login", url)
+	}
 
 	// Create an MCP client.
 	client := mcp.NewClient(&mcp.Implementation{
@@ -128,8 +271,16 @@ func runClient(url string) {
 		Version: "1.0.0",
 	}, nil)
 
-	// Connect to the server.
-	session, err := client.Connect(ctx, &mcp.StreamableClientTransport{Endpoint: url}, nil)
+	// Create OAuth HTTP client with bearer token
+	httpClient := CreateOAuthHTTPClient(bearerToken)
+
+	// Connect to the server with authenticated HTTP client.
+	// Note: Connect to /mcp endpoint instead of root
+	mcpEndpoint := url + "/mcp"
+	session, err := client.Connect(ctx, &mcp.StreamableClientTransport{
+		Endpoint:   mcpEndpoint,
+		HTTPClient: httpClient,
+	}, nil)
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
