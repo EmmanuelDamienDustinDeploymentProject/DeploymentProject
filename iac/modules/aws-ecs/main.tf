@@ -1,4 +1,3 @@
-
 data "aws_vpc" "default" {
 }
 
@@ -330,8 +329,12 @@ data "aws_route53_zone" "main" {
 
 resource "aws_route53_record" "mcp_subdomain" {
   zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.domain
-  type    = "CNAME"
-  ttl     = 60
-  records = [aws_lb.main.dns_name]
+  name    = var.domain            # apex of the zone
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
+    evaluate_target_health = true
+  }
 }
