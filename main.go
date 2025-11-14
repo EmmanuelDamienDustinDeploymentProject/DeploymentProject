@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -22,6 +23,11 @@ var (
 )
 
 func main() {
+	flag.Parse()
+
+	// Initialize OAuth configuration
+	InitOAuth()
+
 	runServer(fmt.Sprintf("%s:%d", *host, *port))
 }
 
@@ -96,18 +102,28 @@ func runServer(url string) {
 	}, getTime)
 
 	// Create the streamable HTTP handler.
-	handler := mcp.NewStreamableHTTPHandler(func(req *http.Request) *mcp.Server {
+	mcpHandler := mcp.NewStreamableHTTPHandler(func(req *http.Request) *mcp.Server {
 		return server
 	}, nil)
 
 	mux := http.NewServeMux()
-	mux.Handle("/", handler)
+
+	// OAuth endpoints (no authentication required)
+	mux.HandleFunc("/oauth/login", oauthLoginHandler)
+	mux.HandleFunc("/oauth/callback", oauthCallbackHandler)
+
+	// MCP endpoint (requires authentication)
+	mux.Handle("/mcp", bearerTokenMiddleware(mcpHandler))
+
+	// Health check (no authentication required)
 	mux.HandleFunc("/health", healthCheckHandler)
 
 	handlerWithLogging := loggingHandler(mux)
 
 	log.Printf("MCP server listening on %s", url)
 	log.Printf("Available tool: cityTime (cities: nyc, sf, boston)")
+	log.Printf("OAuth login: http://%s/oauth/login", url)
+	log.Printf("MCP endpoint: http://%s/mcp", url)
 	log.Printf("Health check available at /health")
 
 	// Start the HTTP server with logging handler.
@@ -116,11 +132,51 @@ func runServer(url string) {
 	}
 }
 
+// bearerTokenMiddleware validates bearer tokens before allowing access to the MCP handler
+func bearerTokenMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Extract bearer token from Authorization header
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+			log.Printf("Request rejected: missing Authorization header from %s", r.RemoteAddr)
+			return
+		}
+
+		// Check for "Bearer " prefix
+		const bearerPrefix = "Bearer "
+		if len(authHeader) < len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
+			http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
+			log.Printf("Request rejected: invalid Authorization header format from %s", r.RemoteAddr)
+			return
+		}
+
+		token := authHeader[len(bearerPrefix):]
+
+		// Validate the token
+		if err := ValidateBearerToken(token); err != nil {
+			http.Error(w, fmt.Sprintf("Invalid token: %v", err), http.StatusUnauthorized)
+			log.Printf("Request rejected: %v from %s", err, r.RemoteAddr)
+			return
+		}
+
+		// Token is valid, proceed to the MCP handler
+		next.ServeHTTP(w, r)
+	})
+}
+
 func runClient(url string) {
 	ctx := context.Background()
 
 	// Create the URL for the server.
 	log.Printf("Connecting to MCP server at %s", url)
+
+	// Get bearer token from environment variable
+	bearerToken := os.Getenv("MCP_BEARER_TOKEN")
+	if bearerToken == "" {
+		log.Println("Warning: MCP_BEARER_TOKEN not set. Authentication may fail.")
+		log.Printf("To authenticate, visit: %s/oauth/login", url)
+	}
 
 	// Create an MCP client.
 	client := mcp.NewClient(&mcp.Implementation{
@@ -128,8 +184,16 @@ func runClient(url string) {
 		Version: "1.0.0",
 	}, nil)
 
-	// Connect to the server.
-	session, err := client.Connect(ctx, &mcp.StreamableClientTransport{Endpoint: url}, nil)
+	// Create OAuth HTTP client with bearer token
+	httpClient := CreateOAuthHTTPClient(bearerToken)
+
+	// Connect to the server with authenticated HTTP client.
+	// Note: Connect to /mcp endpoint instead of root
+	mcpEndpoint := url + "/mcp"
+	session, err := client.Connect(ctx, &mcp.StreamableClientTransport{
+		Endpoint:   mcpEndpoint,
+		HTTPClient: httpClient,
+	}, nil)
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
