@@ -26,6 +26,8 @@ data "github_repository" "main" {
 
 data "aws_vpc" "default" {}
 
+# Subdomain and certificate for HTTPS
+
 resource "aws_route53_zone" "private_zone" {
   name = "mcp.alandzes.com"
   vpc {
