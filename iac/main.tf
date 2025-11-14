@@ -45,10 +45,11 @@ resource "aws_acm_certificate" "mcp" {
   }
 }
 
+
 module "ecs_cluster" {
   source                 = "./modules/aws-ecs"
   github_repo_name       = data.github_repository.main.full_name
   ecs_task_environment_variables = []
   domain                 = aws_route53_zone.private_zone.name
-  acm_certificate_domain = "mcp.alandzes.com"
+  acm_certificate_domain = aws_acm_certificate.mcp.domain_name
 }
