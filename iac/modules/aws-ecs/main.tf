@@ -330,7 +330,7 @@ data "aws_route53_zone" "main" {
 
 resource "aws_route53_record" "mcp_subdomain" {
   zone_id = data.aws_route53_zone.main.zone_id
-  name    = format("mcp.%s", var.domain)
+  name    = var.domain
   type    = "CNAME"
   ttl     = 60
   records = [aws_lb.main.dns_name]
