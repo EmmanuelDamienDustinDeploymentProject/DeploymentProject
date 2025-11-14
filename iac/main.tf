@@ -24,8 +24,21 @@ data "github_repository" "main" {
   full_name = "EmmanuelDamienDustinDeploymentProject/DeploymentProject"
 }
 
+data "aws_vpc" "default" {}
+
+resource "aws_route53_zone" "private_zone" {
+  name = "mcp.alandzes.com"
+  vpc {
+    vpc_id = data.aws_vpc.default.id
+    vpc_region = "us-east-1"
+  }
+}
+
+
 module "ecs_cluster" {
   source                 = "./modules/aws-ecs"
   github_repo_name       = data.github_repository.main.full_name
   ecs_task_environment_variables = []
+  domain                 = aws_route53_zone.private_zone.name
+  acm_certificate_domain = "*.alandzes.com"
 }
