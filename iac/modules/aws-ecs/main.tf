@@ -191,8 +191,10 @@ resource "aws_security_group" "load_balancer_sg" {
 resource "aws_vpc_security_group_ingress_rule" "allow_https_ipv4" {
   security_group_id = aws_security_group.load_balancer_sg.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 443
-  to_port           = 443
+  # from_port         = 443
+  # to_port           = 443
+  from_port = 80
+  to_port = 80
   ip_protocol       = "tcp"
 
 }
@@ -221,10 +223,12 @@ resource "aws_lb" "main" {
 
 resource "aws_lb_listener" "main" {
   load_balancer_arn = aws_lb.main.arn
-  port              = "443"
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = data.aws_acm_certificate.main.arn
+  port              = "80"
+  protocol          = "HTTP"
+  # port              = "443"
+  # protocol          = "HTTPS"
+  # ssl_policy        = "ELBSecurityPolicy-2016-08"
+  # certificate_arn   = data.aws_acm_certificate.main.arn
 
   default_action {
     type             = "forward"
@@ -319,19 +323,19 @@ resource "github_actions_variable" "ecs_cluster_name" {
   variable_name = "ECS_CLUSTER_NAME"
   value         = aws_ecs_cluster.main.name
 }
-
-data "aws_acm_certificate" "main" {
-  domain = var.acm_certificate_domain
-}
-
-data "aws_route53_zone" "main" {
-  name = var.domain
-}
-
-resource "aws_route53_record" "mcp_subdomain" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = format("mcp.%s", var.domain)
-  type    = "CNAME"
-  ttl     = 60
-  records = [aws_lb.main.dns_name]
-}
+#
+# data "aws_acm_certificate" "main" {
+#   domain = var.acm_certificate_domain
+# }
+#
+# data "aws_route53_zone" "main" {
+#   name = var.domain
+# }
+#
+# resource "aws_route53_record" "mcp_subdomain" {
+#   zone_id = data.aws_route53_zone.main.zone_id
+#   name    = format("mcp.%s", var.domain)
+#   type    = "CNAME"
+#   ttl     = 60
+#   records = [aws_lb.main.dns_name]
+# }
