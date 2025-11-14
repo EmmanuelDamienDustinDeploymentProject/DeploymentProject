@@ -239,7 +239,7 @@ func oauthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 </head>
 <body>
     <div class="container">
-        <h1>✓ Authentication Successful</h1>
+        <h1>Authentication Successful</h1>
         <p>Welcome, <strong>%s</strong>!</p>
         <p class="info">Use this bearer token to authenticate your MCP client:</p>
         <div class="token" id="token">%s</div>

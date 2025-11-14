@@ -6,11 +6,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -37,7 +39,7 @@ type GetTimeParams struct {
 }
 
 // getTime implements the tool that returns the current time for a given city.
-func getTime(ctx context.Context, req *mcp.CallToolRequest, params *GetTimeParams) (*mcp.CallToolResult, any, error) {
+func getTime(_ context.Context, _ *mcp.CallToolRequest, params *GetTimeParams) (*mcp.CallToolResult, any, error) {
 	// Define time zones for each city
 	locations := map[string]string{
 		"nyc":    "America/New_York",
@@ -83,30 +85,49 @@ func getTime(ctx context.Context, req *mcp.CallToolRequest, params *GetTimeParam
 	}, nil, nil
 }
 
-func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+func healthCheckHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("OK"))
 }
 
 func runServer(url string) {
-	// Create an MCP server.
+	// Determine MCP handler options from environment (default: stateless true unless explicitly disabled)
+	envStateless := strings.ToLower(os.Getenv("MCP_STATELESS"))
+	useStateless := true
+	if envStateless == "0" || envStateless == "false" {
+		useStateless = false
+	}
+
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "time-server",
 		Version: "1.0.0",
 	}, nil)
 
-	// Add the cityTime tool.
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "cityTime",
 		Description: "Get the current time in NYC, San Francisco, or Boston",
 	}, getTime)
 
-	// Create the streamable HTTP handler.
 	mcpHandler := mcp.NewStreamableHTTPHandler(func(req *http.Request) *mcp.Server {
 		return server
-	}, nil)
+	}, &mcp.StreamableHTTPOptions{
+		Stateless:    useStateless,
+		JSONResponse: useStateless, // if stateless, make curl output easier
+	})
 
 	mux := http.NewServeMux()
+
+	// Root info page
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		modeStr := "session"
+		transportStr := " SSE stream"
+		if useStateless {
+			modeStr = "stateless"
+			transportStr = " JSON response"
+		}
+		w.Header().Set("Content-Type", "text/plain")
+		fmt.Fprintf(w, "MCP Time Server\n\nMode: %s\nEndpoints:\n  /oauth/login (start GitHub OAuth)\n  /oauth/callback (OAuth redirect)\n  /mcp (MCP transport%s)\n  /time?city=nyc (REST time query, bearer required)\n  /whoami (REST auth test, bearer required)\n  /health (health check)\n\nTools:\n  cityTime: cities = nyc, sf, boston\n", modeStr, transportStr)
+	})
 
 	// OAuth endpoints (no authentication required)
 	mux.HandleFunc("/oauth/login", oauthLoginHandler)
@@ -115,16 +136,77 @@ func runServer(url string) {
 	// MCP endpoint (requires authentication)
 	mux.Handle("/mcp", bearerTokenMiddleware(mcpHandler))
 
+	// Simple REST convenience endpoint for manual curl testing
+	mux.Handle("/time", bearerTokenMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		city := r.URL.Query().Get("city")
+		result, _, err := getTime(r.Context(), nil, &GetTimeParams{City: city})
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+		if len(result.Content) == 0 {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte("empty response"))
+			return
+		}
+		if tc, ok := result.Content[0].(*mcp.TextContent); ok {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(tc.Text))
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte("unexpected content type"))
+	})))
+
+	// Authenticated whoami endpoint to return the GitHub username linked to the bearer token
+	mux.Handle("/whoami", bearerTokenMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		const bearerPrefix = "Bearer "
+		if !strings.HasPrefix(authHeader, bearerPrefix) {
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte("missing bearer token"))
+			return
+		}
+		token := strings.TrimPrefix(authHeader, bearerPrefix)
+		info, ok := validTokens.Get(token)
+		if !ok || info == nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte("invalid or expired token"))
+			return
+		}
+		resp := map[string]any{
+			"username":  info.Username,
+			"expiresAt": info.ExpiresAt.Format(time.RFC3339),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(resp)
+	})))
+
 	// Health check (no authentication required)
 	mux.HandleFunc("/health", healthCheckHandler)
 
 	handlerWithLogging := loggingHandler(mux)
 
 	log.Printf("MCP server listening on %s", url)
-	log.Printf("Available tool: cityTime (cities: nyc, sf, boston)")
+	modeStr := "session"
+	if useStateless {
+		modeStr = "stateless"
+	}
+	log.Printf("Mode: %s (MCP_STATELESS=%v)", modeStr, useStateless)
+	log.Printf("Tool: cityTime (cities: nyc, sf, boston)")
 	log.Printf("OAuth login: http://%s/oauth/login", url)
+	log.Printf("Root info: http://%s/", url)
 	log.Printf("MCP endpoint: http://%s/mcp", url)
-	log.Printf("Health check available at /health")
+	log.Printf("REST time endpoint: http://%s/time?city=nyc", url)
+	log.Printf("WhoAmI endpoint: http://%s/whoami", url)
+	log.Printf("Health: http://%s/health", url)
+	if !useStateless {
+		log.Printf("Sessionful mode: For curl testing set MCP_STATELESS=1 and restart, or send a proper session initialization JSON-RPC request first.")
+	} else {
+		log.Printf("Stateless mode: Direct tools/list and tools/call POSTs are accepted.")
+	}
 
 	// Start the HTTP server with logging handler.
 	if err := http.ListenAndServe(url, handlerWithLogging); err != nil {
@@ -166,6 +248,11 @@ func bearerTokenMiddleware(next http.Handler) http.Handler {
 }
 
 func runClient(url string) {
+	// Mark runClient unused silence by referencing conditionally
+	if false {
+		log.Printf("runClient not invoked: %s", url)
+	}
+
 	ctx := context.Background()
 
 	// Create the URL for the server.
