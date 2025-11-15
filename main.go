@@ -100,7 +100,7 @@ func runClient(url string) {
 	for _, city := range cities {
 		// Call the tool.
 		result, err := session.CallTool(ctx, &mcp.CallToolParams{
-			Name: "cityTime",
+			Name: "Get City Time",
 			Arguments: map[string]any{
 				"city": city,
 			},
