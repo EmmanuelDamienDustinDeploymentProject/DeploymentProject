@@ -44,6 +44,12 @@ docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v2.6.2 golangci-li
 
 #### Terraform
 
+##### terraform fmt and validate
+```bash
+terraform fmt -write=true --recursive
+terraform validate
+```
+
 You can run [tflint](https://github.com/terraform-linters/tflint) with Docker like this:
 ```bash
 docker run --rm -v $(pwd)/iac:/data -t --entrypoint /bin/sh ghcr.io/terraform-linters/tflint -c "tflint --init && tflint --recursive"

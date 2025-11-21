@@ -1,4 +1,4 @@
-name: iac-linting.yml
+name: iac
 on:
   push:
     branches:
