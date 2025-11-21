@@ -49,6 +49,13 @@ You can run [tflint](https://github.com/terraform-linters/tflint) with Docker li
 docker run --rm -v $(pwd)/iac:/data -t --entrypoint /bin/sh ghcr.io/terraform-linters/tflint -c "tflint --init && tflint --recursive"
 ```
 
+#### Docker
+
+You can run [hadolint](https://github.com/hadolint/hadolint) with Docker like this:
+```bash
+docker run --rm -i hadolint/hadolint < Dockerfile
+```
+
 ## Libraries
 
 https://pkg.go.dev/net/http
@@ -65,6 +72,7 @@ https://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html
 
 https://golangci-lint.run/
 https://github.com/terraform-linters/tflint
+https://github.com/hadolint/hadolint
 
 ## Information
 
