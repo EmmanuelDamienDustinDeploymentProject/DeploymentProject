@@ -24,12 +24,11 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	runServer(fmt.Sprintf("%s:%d", host, port))
-}
 
-func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("OK"))
+	// Initialize OAuth configuration
+	InitOAuth()
+
+	runServer(fmt.Sprintf("%s:%s", host, port))
 }
 
 func runServer(url string) {
@@ -47,8 +46,13 @@ func runServer(url string) {
 	}, nil)
 
 	mux := http.NewServeMux()
+
+	// this is the mcp endpoint (requires authentication)
 	mux.Handle("/", handler)
+
 	mux.HandleFunc("/health", healthCheckHandler)
+	mux.HandleFunc("/oauth/login", oauthLoginHandler)
+	mux.HandleFunc("/oauth/callback", oauthCallbackHandler)
 
 	handlerWithLogging := loggingHandler(mux)
 
@@ -60,4 +64,9 @@ func runServer(url string) {
 	if err := http.ListenAndServe(url, handlerWithLogging); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
+}
+
+func healthCheckHandler(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("OK"))
 }
