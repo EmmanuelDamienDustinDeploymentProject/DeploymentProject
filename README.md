@@ -32,6 +32,13 @@ After starting the go server, run this npx command and once the browser opens cl
 npx @modelcontextprotocol/inspector --config mcp-inspector-config.json 
 ```
 
+### Linting
+
+You can run [golangci-lint](https://golangci-lint.run/docs/welcome/install/#local-installation) with Docker like this:
+```bash
+docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v2.6.2 golangci-lint run
+```
+
 ## Libraries
 
 https://pkg.go.dev/net/http
