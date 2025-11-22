@@ -7,7 +7,10 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-type GetAPR struct{}
+type CalculateAPR struct{
+	Name string
+	Description string
+}
 
 // CalculateAPRParams defines the parameters for the apr tool.
 type CalculateAPRParams struct {
@@ -16,7 +19,7 @@ type CalculateAPRParams struct {
 	TermInYears   int     `json:"termInYears" jsonschema:"The loan term in years (e.g., 3)"`
 }
 
-func getAPR(ctx context.Context, req *mcp.CallToolRequest, params *CalculateAPRParams) (*mcp.CallToolResult, any, error) {
+func (tool *CalculateAPR) Action(ctx context.Context, req *mcp.CallToolRequest, params *CalculateAPRParams) (*mcp.CallToolResult, any, error) {
 	if params.Principal <= 0 {
 		return nil, nil, fmt.Errorf("principal must be greater than 0")
 	}
@@ -24,7 +27,7 @@ func getAPR(ctx context.Context, req *mcp.CallToolRequest, params *CalculateAPRP
 		return nil, nil, fmt.Errorf("term in years must be greater than 0")
 	}
 	if params.TotalInterest < 0 {
-		return nil, nil, fmt.Errorf("total interest cannot be negative")
+return nil, nil, fmt.Errorf("total interest cannot be negative")
 	}
 
 	totalInterestFraction := params.TotalInterest / params.Principal
@@ -45,13 +48,20 @@ func getAPR(ctx context.Context, req *mcp.CallToolRequest, params *CalculateAPRP
 	}, nil, nil
 }
 
-func (tool *GetAPR) Register(server *mcp.Server) {
-	mcp.AddTool(server, &mcp.Tool{
-		Name:        "apr",
-		Description: "Calculates the simple APR based on total interest paid.",
-	}, getAPR)
+func (tool *CalculateAPR) Register(server *mcp.Server) (mcpToolInstance *mcp.Tool) {
+	mcpToolInstance = &mcp.Tool{
+		Name: tool.Name,
+		Description: tool.Description,
+	}
+
+	mcp.AddTool(server, mcpToolInstance, tool.Action)
+
+	return
 }
 
 func init() {
-	tools = append(tools, &GetAPR{})
+	tools = append(tools, &CalculateAPR{
+		Name:        "Calculate APR",
+		Description: "Calculates the simple APR based on total interest paid.",
+	})
 }

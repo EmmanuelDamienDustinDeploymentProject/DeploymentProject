@@ -9,14 +9,17 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-type GetFortune struct{}
+type GetFortune struct{
+	Name string
+	Description string
+}
 
 type FortuneAPIResponse struct {
 	Data	struct{Message string `json:"message"`} `json:"data"`
 	Meta	struct{Status string `json:"status"`} `json:"meta"`
 }
 
-func getFortune(ctx context.Context, req *mcp.CallToolRequest, params *struct{}) (*mcp.CallToolResult, any, error) {
+func (tool *GetFortune) Action(ctx context.Context, req *mcp.CallToolRequest, params *struct{}) (*mcp.CallToolResult, any, error) {
 	res, err := http.Get("https://aphorismcookie.herokuapp.com/")
 	if err != nil {
 		return nil, nil, fmt.Errorf( "Connecting to fortune API failed!: %s", err )
@@ -36,13 +39,20 @@ func getFortune(ctx context.Context, req *mcp.CallToolRequest, params *struct{})
 	}, nil, nil
 }
 
-func (tool *GetFortune) Register(server *mcp.Server) {
-	mcp.AddTool(server, &mcp.Tool{
-		Name: "Get Fortune",
-		Description: "Gets a random fortune from aphorismcookie.herokuapp.com",
-	}, getFortune)
+func (tool *GetFortune) Register(server *mcp.Server) (mcpToolInstance *mcp.Tool) {
+	mcpToolInstance = &mcp.Tool{
+		Name: tool.Name,
+		Description: tool.Description,
+	}
+
+	mcp.AddTool(server, mcpToolInstance, tool.Action)
+
+	return
 }
 
 func init() {
-	tools = append(tools, &GetFortune{})
+	tools = append(tools, &GetFortune{
+		Name: "Get Fortune",
+		Description: "Gets a random fortune from aphorismcookie.herokuapp.com",
+	})
 }

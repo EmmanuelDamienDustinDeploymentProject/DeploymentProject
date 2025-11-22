@@ -8,7 +8,10 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-type GetCityTime struct{}
+type GetCityTime struct{
+	Name string
+	Description string
+}
 
 // GetTimeParams defines the parameters for the cityTime tool.
 type GetCityTimeParams struct {
@@ -16,7 +19,7 @@ type GetCityTimeParams struct {
 }
 
 // getTime implements the tool that returns the current time for a given city.
-func getTime(ctx context.Context, req *mcp.CallToolRequest, params *GetCityTimeParams) (*mcp.CallToolResult, any, error) {
+func (tool *GetCityTime) Action(ctx context.Context, req *mcp.CallToolRequest, params *GetCityTimeParams) (*mcp.CallToolResult, any, error) {
 	// Define time zones for each city
 	locations := map[string]string{
 		"nyc":    "America/New_York",
@@ -62,13 +65,20 @@ func getTime(ctx context.Context, req *mcp.CallToolRequest, params *GetCityTimeP
 	}, nil, nil
 }
 
-func (tool *GetCityTime) Register(server *mcp.Server) {
-	mcp.AddTool(server, &mcp.Tool{
-		Name: "Get City Time",
-		Description: "Get the current time in NYC, San Francisco, or Boston",
-	}, getTime)
+func (tool *GetCityTime) Register(server *mcp.Server) (mcpToolInstance *mcp.Tool) {
+	mcpToolInstance = &mcp.Tool{
+		Name: tool.Name,
+		Description: tool.Description,
+	}
+
+	mcp.AddTool(server, mcpToolInstance, tool.Action)
+
+	return
 }
 
 func init() {
-	tools = append(tools, &GetCityTime{})
+	tools = append(tools, &GetCityTime{
+		Name: "Get City Time",
+		Description: "Get the current time in NYC, San Francisco, or Boston",
+	})
 }
