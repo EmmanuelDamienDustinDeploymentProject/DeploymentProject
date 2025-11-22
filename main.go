@@ -5,29 +5,30 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"EmmanuelDamienDustinDeploymentProject/DeploymentProject/tools"
 )
 
-// TODO: Move this to environment variables
-var (
-	host = flag.String("host", "0.0.0.0", "host to connect to/listen on")
-	port = flag.Int("port", 8080, "port number to connect to/listen on")
-)
-
 func main() {
-	runServer(fmt.Sprintf("%s:%d", *host, *port))
-}
+	host := os.Getenv("HOST")
+	port := os.Getenv("PORT")
+	if host == "" {
+		host = "0.0.0.0"
+	}
+	if port == "" {
+		port = "8080"
+	}
 
-func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("OK"))
+	// Initialize OAuth configuration
+	InitOAuth()
+
+	runServer(fmt.Sprintf("%s:%s", host, port))
 }
 
 func runServer(url string) {
@@ -45,8 +46,13 @@ func runServer(url string) {
 	}, nil)
 
 	mux := http.NewServeMux()
+
+	// this is the mcp endpoint (requires authentication)
 	mux.Handle("/", handler)
+
 	mux.HandleFunc("/health", healthCheckHandler)
+	mux.HandleFunc("/oauth/login", oauthLoginHandler)
+	mux.HandleFunc("/oauth/callback", oauthCallbackHandler)
 
 	handlerWithLogging := loggingHandler(mux)
 
@@ -57,4 +63,9 @@ func runServer(url string) {
 	if err := http.ListenAndServe(url, handlerWithLogging); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
+}
+
+func healthCheckHandler(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("OK"))
 }

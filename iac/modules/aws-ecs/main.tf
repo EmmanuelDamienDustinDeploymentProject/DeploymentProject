@@ -329,7 +329,7 @@ data "aws_route53_zone" "main" {
 
 resource "aws_route53_record" "mcp_subdomain" {
   zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.domain            # apex of the zone
+  name    = var.domain # apex of the zone
   type    = "A"
 
   alias {

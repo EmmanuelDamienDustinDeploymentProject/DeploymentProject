@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>OAuth Success</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #24292e; }
+        .token {
+            background: #f6f8fa;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 20px 0;
+        }
+        .copy-btn {
+            background: #2ea44f;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .copy-btn:hover { background: #2c974b; }
+        .info { color: #586069; font-size: 14px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Authentication Successful</h1>
+    <p>Welcome, <strong>{{.Username}}</strong>!</p>
+    <p class="info">Use this bearer token to authenticate your MCP client:</p>
+    <div class="token" id="token">{{.AccessToken}}</div>
+    <button class="copy-btn" onclick="copyToken()">Copy Token</button>
+    <p class="info" style="margin-top: 20px;">
+        Token expires: {{.ExpiresAt}}<br>
+        Add this token to your MCP client configuration.
+    </p>
+</div>
+<script>
+    function copyToken() {
+        const token = document.getElementById('token').textContent;
+        navigator.clipboard.writeText(token).then(() => {
+            const btn = document.querySelector('.copy-btn');
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => btn.textContent = 'Copy Token', 2000);
+        });
+    }
+</script>
+</body>
+</html>
