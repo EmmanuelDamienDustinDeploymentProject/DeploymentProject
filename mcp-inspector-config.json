@@ -2,7 +2,11 @@
   "mcpServers": {
     "default-server": {
       "type": "streamable-http",
-      "url": "http://localhost:8080/"
+      "url": "http://localhost:8080/",
+      "oauth": {
+        "dynamicClientRegistrationEndpoint": "http://localhost:8080/dcr",
+        "authorizationEndpoint": "http://localhost:8080/oauth/login"
+      }
     }
   }
 }

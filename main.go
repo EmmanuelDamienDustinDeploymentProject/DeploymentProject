@@ -16,6 +16,9 @@ import (
 )
 
 func main() {
+	// Initialize OAuth configuration
+	InitializeOAuth()
+
 	host := os.Getenv("HOST")
 	port := os.Getenv("PORT")
 	if host == "" {
@@ -25,9 +28,6 @@ func main() {
 		port = "8080"
 	}
 
-	// Initialize OAuth configuration
-	InitOAuth()
-
 	runServer(fmt.Sprintf("%s:%s", host, port))
 }
 
@@ -36,7 +36,10 @@ func runServer(url string) {
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "time-server",
 		Version: "1.0.0",
-	}, nil)
+	}, &mcp.ServerOptions{
+		HasTools:  true,
+		KeepAlive: 10,
+	})
 
 	tools.RegisterAll(server)
 
@@ -47,14 +50,23 @@ func runServer(url string) {
 
 	mux := http.NewServeMux()
 
-	// this is the mcp endpoint (requires authentication)
-	mux.Handle("/", handler)
-
+	// Register specific routes first (before the catch-all "/" route)
 	mux.HandleFunc("/health", healthCheckHandler)
 	mux.HandleFunc("/oauth/login", oauthLoginHandler)
 	mux.HandleFunc("/oauth/callback", oauthCallbackHandler)
+	mux.HandleFunc("/oauth/token", oauthTokenHandler)
+	mux.HandleFunc("/dcr", dcrHandler)
 
-	handlerWithLogging := loggingHandler(mux)
+	// OAuth discovery endpoints (RFC 8414 and RFC 9728) - must be public
+	mux.HandleFunc("/.well-known/oauth-protected-resource", oauthMetadataHandler)
+	mux.HandleFunc("/.well-known/oauth-authorization-server", authServerMetadataHandler)
+
+	// MCP endpoint with authentication middleware
+	mux.Handle("/", bearerTokenMiddleware(handler))
+
+	// Wrap the mux with CORS middleware and then logging middleware
+	handlerWithCORS := corsMiddleware(mux)
+	handlerWithLogging := loggingHandler(handlerWithCORS)
 
 	log.Printf("MCP server listening on %s", url)
 	log.Printf("Available tool: cityTime (cities: nyc, sf, boston)")
@@ -69,4 +81,24 @@ func runServer(url string) {
 func healthCheckHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("OK"))
+}
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Allow all origins
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// Allow methods
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		// Allow headers
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Pass down the request to the next handler
+		next.ServeHTTP(w, r)
+	})
 }

@@ -64,7 +64,7 @@ func getTime(ctx context.Context, req *mcp.CallToolRequest, params *GetCityTimeP
 
 func (tool *GetCityTime) Register(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
-		Name: "Get City Time",
+		Name:        "GetCityTime",
 		Description: "Get the current time in NYC, San Francisco, or Boston",
 	}, getTime)
 }

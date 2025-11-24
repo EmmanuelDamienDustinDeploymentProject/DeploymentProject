@@ -1,5 +1,32 @@
 # DeploymentProject
 
+## OAuth Setup
+
+This MCP server supports OAuth 2.0 authentication with GitHub, implementing:
+- RFC 8414 (OAuth 2.0 Authorization Server Metadata)
+- RFC 9728 (OAuth 2.0 Protected Resource Metadata)
+- RFC 7591 (Dynamic Client Registration)
+
+**Authentication Mode**: Always required for tool calls. Discovery methods (initialize, tools/list, prompts/list, resources/list) work without authentication to enable OAuth flow initiation.
+
+### Environment Variables
+
+Set your GitHub OAuth app credentials:
+```bash
+export GITHUB_CLIENT_ID=your_client_id
+export GITHUB_CLIENT_SECRET=your_client_secret
+```
+
+The server automatically initializes OAuth if these environment variables are set. If not set, the server runs without authentication (development mode).
+
+### GitHub OAuth App Setup
+
+1. Go to GitHub Settings > Developer settings > OAuth Apps
+2. Create a new OAuth App with:
+   - Application name: DeploymentProject MCP
+   - Homepage URL: http://localhost:8080
+   - Authorization callback URL: http://localhost:8080/oauth/callback (or any redirect URI you configure)
+
 ## Usage
 ```bash
 go run .
