@@ -5,24 +5,26 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"EmmanuelDamienDustinDeploymentProject/DeploymentProject/tools"
 )
 
-// TODO: Move this to environment variables
-var (
-	host = flag.String("host", "0.0.0.0", "host to connect to/listen on")
-	port = flag.Int("port", 8080, "port number to connect to/listen on")
-)
-
 func main() {
-	runServer(fmt.Sprintf("%s:%d", *host, *port))
+	host := os.Getenv("HOST")
+	port := os.Getenv("PORT")
+	if host == "" {
+		host = "0.0.0.0"
+	}
+	if port == "" {
+		port = "8080"
+	}
+	runServer(fmt.Sprintf("%s:%d", host, port))
 }
 
 func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
