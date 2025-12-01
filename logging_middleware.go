@@ -21,6 +21,10 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.ResponseWriter.WriteHeader(code)
 }
 
+func (rw *responseWriter) Header() http.Header {
+	return rw.ResponseWriter.Header()
+}
+
 func loggingHandler(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -28,24 +32,38 @@ func loggingHandler(handler http.Handler) http.Handler {
 		// Create a response writer wrapper to capture status code.
 		wrapped := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 
-		// Log request details.
-		log.Printf("[REQUEST] %s | %s | %s %s",
+		// Log request details including session ID if present
+		sessionID := r.Header.Get("Mcp-Session-Id")
+		sessionInfo := ""
+		if sessionID != "" {
+			sessionInfo = " | Session: " + sessionID
+		}
+
+		log.Printf("[REQUEST] %s | %s | %s %s%s",
 			start.Format(time.RFC3339),
 			r.RemoteAddr,
 			r.Method,
-			r.URL.Path)
+			r.URL.Path,
+			sessionInfo)
 
 		// Call the actual handler.
 		handler.ServeHTTP(wrapped, r)
 
-		// Log response details.
+		// Log response details including session ID if set in response
+		responseSessionID := wrapped.Header().Get("Mcp-Session-Id")
+		responseSessionInfo := ""
+		if responseSessionID != "" {
+			responseSessionInfo = " | Response Session: " + responseSessionID
+		}
+
 		duration := time.Since(start)
-		log.Printf("[RESPONSE] %s | %s | %s %s | Status: %d | Duration: %v",
+		log.Printf("[RESPONSE] %s | %s | %s %s | Status: %d | Duration: %v%s",
 			time.Now().Format(time.RFC3339),
 			r.RemoteAddr,
 			r.Method,
 			r.URL.Path,
 			wrapped.statusCode,
-			duration)
+			duration,
+			responseSessionInfo)
 	})
 }
