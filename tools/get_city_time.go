@@ -35,7 +35,7 @@ func getTime(ctx context.Context, req *mcp.CallToolRequest, params *GetCityTimeP
 		return nil, nil, fmt.Errorf("unknown city: %s", city)
 	}
 
-	// Load the location.
+	// Load the location.https://aphorismcookie.herokuapp.com
 	loc, err := time.LoadLocation(tzName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load timezone: %w", err)

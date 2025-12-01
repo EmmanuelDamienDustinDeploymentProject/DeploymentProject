@@ -34,9 +34,32 @@ npx @modelcontextprotocol/inspector --config mcp-inspector-config.json
 
 ### Linting
 
+
+#### Go
+
 You can run [golangci-lint](https://golangci-lint.run/docs/welcome/install/#local-installation) with Docker like this:
 ```bash
 docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v2.6.2 golangci-lint run
+```
+
+#### Terraform
+
+##### terraform fmt and validate
+```bash
+terraform fmt -write=true --recursive
+terraform validate
+```
+
+You can run [tflint](https://github.com/terraform-linters/tflint) with Docker like this:
+```bash
+docker run --rm -v $(pwd)/iac:/data -t --entrypoint /bin/sh ghcr.io/terraform-linters/tflint -c "tflint --init && tflint --recursive"
+```
+
+#### Docker
+
+You can run [hadolint](https://github.com/hadolint/hadolint) with Docker like this:
+```bash
+docker run --rm -i hadolint/hadolint < Dockerfile
 ```
 
 ## Libraries
@@ -52,6 +75,10 @@ https://github.com/modelcontextprotocol/go-sdk
 https://registry.terraform.io/providers/hashicorp/aws/latest/docs
 https://registry.terraform.io/providers/integrations/github/latest/docs
 https://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html
+
+https://golangci-lint.run/
+https://github.com/terraform-linters/tflint
+https://github.com/hadolint/hadolint
 
 ## Information
 
