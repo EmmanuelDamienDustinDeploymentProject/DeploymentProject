@@ -62,6 +62,18 @@ You can run [hadolint](https://github.com/hadolint/hadolint) with Docker like th
 docker run --rm -i hadolint/hadolint < Dockerfile
 ```
 
+#### Security scanning with Trivy
+
+You can run [trivy](https://trivy.dev/) with Docker like this:
+```bash
+docker run --rm -v "$(pwd):/workspace" aquasec/trivy fs \
+  --ignore-unfixed \
+  --severity CRITICAL,HIGH,MEDIUM,LOW \
+  --scanners vuln,secret,misconfig \
+  /workspace
+```
+
+
 ## Libraries
 
 https://pkg.go.dev/net/http
