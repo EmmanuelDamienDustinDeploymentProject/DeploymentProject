@@ -1,5 +1,10 @@
 # DeploymentProject
 
+![deploy](https://github.com/EmmanuelDamienDustinDeploymentProject/DeploymentProject/actions/workflows/deploy.yml/badge.svg?branch=main)
+![go-build-lint-test](https://github.com/EmmanuelDamienDustinDeploymentProject/DeploymentProject/actions/workflows/go-build-lint-test.yml/badge.svg?branch=main)
+![iac-linting](https://github.com/EmmanuelDamienDustinDeploymentProject/DeploymentProject/actions/workflows/iac-linting.yml/badge.svg?branch=main)
+![trivy](https://github.com/EmmanuelDamienDustinDeploymentProject/DeploymentProject/actions/workflows/trivy.yml/badge.svg?branch=main)
+
 ## Usage
 ```bash
 go run .
