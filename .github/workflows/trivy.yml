@@ -1,4 +1,4 @@
-name: trivy.yml
+name: trivy
 on:
   push:
     branches:

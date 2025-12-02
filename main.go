@@ -24,7 +24,7 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	runServer(fmt.Sprintf("%s:%d", host, port))
+	runServer(fmt.Sprintf("%s:%s", host, port))
 }
 
 func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
