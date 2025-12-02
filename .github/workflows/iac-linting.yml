@@ -31,6 +31,7 @@ jobs:
       - uses: terraform-linters/setup-tflint@v6
         name: Setup TFLint
         with:
+          tflint_config_path: iac/.tflint.hcl
           tflint_version: v0.52.0
           cache: true
 

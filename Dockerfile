@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # https://docs.docker.com/guides/golang/build-images/#multi-stage-builds
-FROM golang:1.24.5 AS build-stage
+FROM golang:1.24 AS build-stage
 
 # https://docs.docker.com/guides/zscaler/#building-with-the-certificate
 # You'll need to create trusted_certs.crt to build locally with zscaler (HP)
