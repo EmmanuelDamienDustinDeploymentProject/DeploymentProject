@@ -27,7 +27,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /docker
 
 # Deploy the application binary into a lean image
-FROM gcr.io/distroless/base-debian11:latest AS build-release-stage
+FROM gcr.io/distroless/base-debian12@sha256:9e9b50d2048db3741f86a48d939b4e4cc775f5889b3496439343301ff54cdba8 AS build-release-stage
 
 WORKDIR /
 
