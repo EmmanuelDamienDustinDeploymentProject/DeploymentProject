@@ -21,7 +21,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # copy your source code into the image
-COPY *.go ./
+COPY . .
 
 # Now, to compile your application
 RUN CGO_ENABLED=0 GOOS=linux go build -o /docker
