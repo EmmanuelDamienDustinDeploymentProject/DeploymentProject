@@ -65,6 +65,13 @@ func runServer(url string) {
 		return
 	}
 
+	// Check if OAuth is enabled
+	if !config.OAuthEnabled {
+		log.Printf("OAuth is disabled (set OAUTH_ENABLED=true to enable)")
+		runServerWithoutAuth(url)
+		return
+	}
+
 	if err := config.Validate(); err != nil {
 		log.Printf("Warning: Invalid OAuth config: %v. OAuth will be disabled.", err)
 		runServerWithoutAuth(url)

@@ -61,9 +61,10 @@ module "ecs_cluster" {
   ecs_task_environment_variables = [
     { "name" : "MCP_SERVER_URL", "value" : "https://mcp.alandzes.com" },
     { "name" : "ENFORCE_HTTPS", "value" : "true" },
-    { "name" : "GITHUB_CLIENT_ID", "value" : "TODO" }, // GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET need to be set manually
-    { "name" : "GITHUB_CLIENT_SECRET", "value" : "TODO" }
+    { "name" : "OAUTH_ENABLED", "value" : "true" }
   ]
   domain                 = data.aws_route53_zone.public_zone.name
   acm_certificate_domain = aws_acm_certificate.mcp.domain_name
+  github_client_id       = var.github_client_id
+  github_client_secret   = var.github_client_secret
 }

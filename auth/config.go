@@ -5,12 +5,17 @@ package auth
 // license that can be found in the LICENSE file.
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
 
 // Config holds the OAuth configuration for the MCP server
@@ -34,6 +39,10 @@ type Config struct {
 
 	// EnforceHTTPS requires HTTPS for all OAuth operations (except localhost)
 	EnforceHTTPS bool
+
+	// OAuthEnabled controls whether OAuth authentication is enabled
+	// If false, the server runs without authentication (for local development)
+	OAuthEnabled bool
 
 	// EnableDCR enables Dynamic Client Registration endpoint
 	EnableDCR bool
@@ -64,6 +73,7 @@ func DefaultConfig() *Config {
 		},
 		TokenExpiryDuration: 1 * time.Hour,
 		EnforceHTTPS:        false, // Default to false for development
+		OAuthEnabled:        false, // Default to false for local development
 		EnableDCR:           true,
 		AllowPublicClients:  true,
 		GitHubAPIURL:        "https://api.github.com",
@@ -95,8 +105,19 @@ func LoadConfigFromEnv() (*Config, error) {
 	}
 
 	// Required for OAuth: GitHub OAuth App credentials
+	// First check for direct environment variables (local development)
 	cfg.GitHubClientID = os.Getenv("GITHUB_CLIENT_ID")
 	cfg.GitHubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
+
+	// If not found, check for AWS Secrets Manager secret name (production)
+	if cfg.GitHubClientID == "" || cfg.GitHubClientSecret == "" {
+		if secretName := os.Getenv("GITHUB_OAUTH_SECRET_NAME"); secretName != "" {
+			// Load from AWS Secrets Manager
+			if err := loadGitHubCredsFromSecretsManager(cfg, secretName); err != nil {
+				return nil, fmt.Errorf("failed to load GitHub credentials from Secrets Manager: %w", err)
+			}
+		}
+	}
 
 	// Optional: Additional redirect URIs
 	if redirectURIs := os.Getenv("OAUTH_REDIRECT_URIS"); redirectURIs != "" {
@@ -133,6 +154,11 @@ func LoadConfigFromEnv() (*Config, error) {
 	// Optional: HTTPS enforcement
 	if enforceHTTPS := os.Getenv("ENFORCE_HTTPS"); enforceHTTPS != "" {
 		cfg.EnforceHTTPS = enforceHTTPS == "true" || enforceHTTPS == "1"
+	}
+
+	// Optional: OAuth enablement (defaults to false for local development)
+	if oauthEnabled := os.Getenv("OAUTH_ENABLED"); oauthEnabled != "" {
+		cfg.OAuthEnabled = oauthEnabled == "true" || oauthEnabled == "1"
 	}
 
 	// Optional: DCR enablement
@@ -178,8 +204,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("HTTPS enforcement enabled but server URL uses HTTP for non-localhost")
 	}
 
-	// Validate GitHub credentials if OAuth is being used
-	if c.EnableDCR || c.GitHubClientID != "" {
+	// Validate GitHub credentials if OAuth is enabled
+	if c.OAuthEnabled {
 		if c.GitHubClientID == "" {
 			return fmt.Errorf("GitHub client ID is required when OAuth is enabled")
 		}
@@ -251,4 +277,42 @@ func isLocalhost(host string) bool {
 		host = host[:idx]
 	}
 	return host == "localhost" || host == "127.0.0.1" || host == "::1"
+}
+
+// loadGitHubCredsFromSecretsManager loads GitHub OAuth credentials from AWS Secrets Manager
+func loadGitHubCredsFromSecretsManager(cfg *Config, secretName string) error {
+	ctx := context.Background()
+
+	// Load AWS SDK configuration
+	awsCfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to load AWS SDK config: %w", err)
+	}
+
+	// Create Secrets Manager client
+	client := secretsmanager.NewFromConfig(awsCfg)
+
+	// Retrieve the secret
+	result, err := client.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{
+		SecretId: &secretName,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to retrieve secret: %w", err)
+	}
+
+	// Parse the secret JSON
+	var secrets struct {
+		GitHubClientID     string `json:"GITHUB_CLIENT_ID"`
+		GitHubClientSecret string `json:"GITHUB_CLIENT_SECRET"`
+	}
+
+	if err := json.Unmarshal([]byte(*result.SecretString), &secrets); err != nil {
+		return fmt.Errorf("failed to parse secret JSON: %w", err)
+	}
+
+	// Set the credentials
+	cfg.GitHubClientID = secrets.GitHubClientID
+	cfg.GitHubClientSecret = secrets.GitHubClientSecret
+
+	return nil
 }

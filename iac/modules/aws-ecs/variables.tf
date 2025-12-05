@@ -22,3 +22,17 @@ variable "acm_certificate_domain" {
   nullable    = false
   description = "Domain with an ACM certificate created"
 }
+
+variable "github_client_id" {
+  type        = string
+  nullable    = false
+  description = "GitHub OAuth App Client ID"
+  sensitive   = true
+}
+
+variable "github_client_secret" {
+  type        = string
+  nullable    = false
+  description = "GitHub OAuth App Client Secret"
+  sensitive   = true
+}

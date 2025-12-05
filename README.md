@@ -52,29 +52,7 @@ Add the MCP server to your client configuration with OAuth support:
 | `TOKEN_EXPIRY_SECONDS` | Token cache expiry duration | `3600` |
 | `OAUTH_SCOPES_SUPPORTED` | Comma-separated scopes | `mcp:tools,mcp:resources,read:user` |
 | `OAUTH_REDIRECT_URIS` | Comma-separated redirect URIs | `http://127.0.0.1:33418,https://vscode.dev/redirect` |
-
-## Deployment
-
-### Setup Github OAuth Environment Variables
-
-There isn't a terraform resource to create the Github OAuth app, so it has to be done manually.
-
-Follow these instructions, and then use the command to update the environment variables and re-deploy the ECS service:
-
-https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app
-
-```
-export GITHUB_CLIENT_ID="your_github_client_id"
-export GITHUB_CLIENT_SECRET="your_github_client_secret"
-
-# Get current task definition, update env vars, register new version, and deploy
-TASK_DEF=$(aws ecs describe-task-definition --task-definition $(aws ecs list-task-definitions --family-prefix mcp-server --sort DESC --max-items 1 --query 'taskDefinitionArns[0]' --output text | awk -F'/' '{print $NF}') --region us-east-1 --query 'taskDefinition' | jq --arg cid "$GITHUB_CLIENT_ID" --arg csec "$GITHUB_CLIENT_SECRET" '.containerDefinitions[0].environment |= map(if .name == "GITHUB_CLIENT_ID" then .value = $cid elif .name == "GITHUB_CLIENT_SECRET" then .value = $csec else . end) | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
-
-# Reg
-aws ecs register-task-definition --cli-input-json "$TASK_DEF" --region us-east-1
-
-aws ecs update-service --cluster mcp-cluster --service mcp-service --task-definition $(aws ecs list-task-definitions --family-prefix mcp-server --sort DESC --max-items 1 --query 'taskDefinitionArns[0]' --output text | awk -F'/' '{print $NF}') --force-new-deployment --region us-east-1
-```
+| `OAUTH_ENABLED` | Enables OAuth authentication | `false` |
 
 ## Development
 
