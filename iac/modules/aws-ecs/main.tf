@@ -157,6 +157,11 @@ resource "aws_ecs_task_definition" "main" {
       }
     }
   ])
+  lifecycle {
+    ignore_changes = [
+      container_definitions[0].environment // We need to set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET manually, and we don't want terraform to try to reset them
+    ]
+  }
 }
 
 resource "aws_lb_target_group" "main" {

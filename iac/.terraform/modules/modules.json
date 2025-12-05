@@ -1,0 +1,1 @@
+{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"ecs_cluster","Source":"./modules/aws-ecs","Dir":"modules/aws-ecs"}]}
