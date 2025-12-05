@@ -9,20 +9,50 @@
 ```bash
 go run .
 ```
+## Endpoints
 
-Now, add the mcp server like this:
+- `/` - Protected MCP endpoint (requires OAuth token)
+- `/health` - Health check (public)
+- `/.well-known/oauth-protected-resource` - Protected resource metadata (public)
+- `/.well-known/oauth-authorization-server` - Authorization server metadata (public)
+- `/register` - Dynamic Client Registration (public, if DCR enabled)
+
+## Usage
+### MCP Client Configuration
+
+Add the MCP server to your client configuration with OAuth support:
+
 ```json
-
 {
   "servers": {
     "deployment-project": {
-      "url": "http://localhost:8000"
+      "type": "http",
+      "url": "http://localhost:8080",
     }
   }
 }
 ```
 
-And you can ask for the timezone for NYC, SF or Boston.
+### Available Tools
+
+- **get_city_time**: Get current time for NYC, SF, or Boston
+- **get_fortune**: Get a random fortune message
+- **apr**: Calculate APR (Annual Percentage Rate) for loans
+
+### Environment Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MCP_SERVER_URL` | Server's canonical URL | (required) |
+| `GITHUB_CLIENT_ID` | GitHub OAuth App Client ID | (required) |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth App Client Secret | (required) |
+| `ENABLE_DCR` | Enable Dynamic Client Registration | `true` |
+| `ALLOW_PUBLIC_CLIENTS` | Allow clients without secrets | `true` |
+| `ENFORCE_HTTPS` | Require HTTPS (except localhost) | `false` |
+| `TOKEN_EXPIRY_SECONDS` | Token cache expiry duration | `3600` |
+| `OAUTH_SCOPES_SUPPORTED` | Comma-separated scopes | `mcp:tools,mcp:resources,read:user` |
+| `OAUTH_REDIRECT_URIS` | Comma-separated redirect URIs | `http://127.0.0.1:33418,https://vscode.dev/redirect` |
+| `OAUTH_ENABLED` | Enables OAuth authentication | `false` |
 
 ## Development
 
@@ -30,11 +60,9 @@ And you can ask for the timezone for NYC, SF or Boston.
 
 The MCP Inspector is an interactive developer tool for testing and debugging MCP servers.
 
-https://modelcontextprotocol.io/docs/tools/inspector
-
-After starting the go server, run this npx command and once the browser opens click "Connect".
+Youy can run [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) like this:
 ```bash
-npx @modelcontextprotocol/inspector --config mcp-inspector-config.json 
+npx @modelcontextprotocol/inspector@0.16.7 --config mcp-inspector-config.json 
 ```
 
 ### Linting
@@ -57,6 +85,7 @@ terraform validate
 
 You can run [tflint](https://github.com/terraform-linters/tflint) with Docker like this:
 ```bash
+cd iac
 docker run --rm -v $(pwd)/iac:/data -t --entrypoint /bin/sh ghcr.io/terraform-linters/tflint -c "tflint --init && tflint --recursive"
 ```
 
@@ -81,34 +110,44 @@ docker run --rm -v "$(pwd):/workspace" aquasec/trivy fs \
 
 ## Libraries
 
+### Go Standard Library
 https://pkg.go.dev/net/http
 https://pkg.go.dev/log
 https://pkg.go.dev/fmt
 https://pkg.go.dev/context
 https://pkg.go.dev/time
 
+### MCP SDK
 https://github.com/modelcontextprotocol/go-sdk
 
+### OAuth Dependencies
+https://pkg.go.dev/golang.org/x/oauth2
+https://pkg.go.dev/github.com/google/uuid
+
+### Infrastructure
 https://registry.terraform.io/providers/hashicorp/aws/latest/docs
 https://registry.terraform.io/providers/integrations/github/latest/docs
 https://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html
 
+### Linting Tools
 https://golangci-lint.run/
 https://github.com/terraform-linters/tflint
 https://github.com/hadolint/hadolint
 
 ## Information
 
+### MCP Documentation
 https://github.com/modelcontextprotocol/go-sdk/tree/main/docs
-
-
 https://modelcontextprotocol.io/docs/getting-started/intro
 https://modelcontextprotocol.io/tutorials/building-mcp-with-llms
 https://modelcontextprotocol.io/specification/2025-06-18
+https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization
 
+### VS Code Integration
 https://code.visualstudio.com/docs/copilot/customization/mcp-servers
 https://code.visualstudio.com/api/extension-guides/ai/mcp
+
+### MCP Resources
 https://github.com/microsoft/mcp-for-beginners
 https://github.com/mcp
 https://github.com/modelcontextprotocol/servers
-https://hub.docker.com/mcp

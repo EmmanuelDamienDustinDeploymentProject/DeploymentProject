@@ -105,6 +105,14 @@ data "aws_iam_policy_document" "task_logging_policy_document" {
     ]
     resources = [aws_cloudwatch_log_group.ecs_task.arn]
   }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "secretsmanager:GetSecretValue",
+    ]
+    resources = [aws_secretsmanager_secret.github_oauth.arn]
+  }
 }
 
 resource "aws_iam_policy" "task_logging_policy" {
@@ -122,6 +130,20 @@ resource "aws_cloudwatch_log_group" "ecs_task" {
   retention_in_days = 5
 }
 
+# Secrets Manager secret for GitHub OAuth credentials
+resource "aws_secretsmanager_secret" "github_oauth" {
+  name        = format("tf-ecs-%s-github-oauth", data.github_repository.main.name)
+  description = "GitHub OAuth credentials for MCP server"
+}
+
+resource "aws_secretsmanager_secret_version" "github_oauth" {
+  secret_id = aws_secretsmanager_secret.github_oauth.id
+  secret_string = jsonencode({
+    GITHUB_CLIENT_ID     = var.github_client_id
+    GITHUB_CLIENT_SECRET = var.github_client_secret
+  })
+}
+
 resource "aws_ecs_task_definition" "main" {
   family = data.github_repository.main.name
 
@@ -135,12 +157,19 @@ resource "aws_ecs_task_definition" "main" {
   memory                   = 512
   container_definitions = jsonencode([
     {
-      name        = "server"
-      image       = "dustinalandzes384/deployment-project:latest"
-      environment = var.ecs_task_environment_variables
-      essential   = true
+      name  = "server"
+      image = "dustinalandzes384/deployment-project:latest"
+      environment = concat(
+        var.ecs_task_environment_variables,
+        [
+          {
+            name  = "GITHUB_OAUTH_SECRET_NAME"
+            value = aws_secretsmanager_secret.github_oauth.name
+          }
+        ]
+      )
+      essential = true
       portMappings = [
-        # TOD: We might need to change this when we use our own code instead of nginx
         {
           containerPort = 8080
           hostPort      = 8080

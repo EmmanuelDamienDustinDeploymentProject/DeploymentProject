@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.13"
+  required_version = ">= 1.12"
 
   required_providers {
     aws = {
@@ -56,9 +56,15 @@ resource "aws_acm_certificate_validation" "validate_certificate" {
 }
 
 module "ecs_cluster" {
-  source                         = "./modules/aws-ecs"
-  github_repo_name               = data.github_repository.main.full_name
-  ecs_task_environment_variables = []
-  domain                         = data.aws_route53_zone.public_zone.name
-  acm_certificate_domain         = aws_acm_certificate.mcp.domain_name
+  source           = "./modules/aws-ecs"
+  github_repo_name = data.github_repository.main.full_name
+  ecs_task_environment_variables = [
+    { "name" : "MCP_SERVER_URL", "value" : "https://mcp.alandzes.com" },
+    { "name" : "ENFORCE_HTTPS", "value" : "true" },
+    { "name" : "OAUTH_ENABLED", "value" : "true" }
+  ]
+  domain                 = data.aws_route53_zone.public_zone.name
+  acm_certificate_domain = aws_acm_certificate.mcp.domain_name
+  github_client_id       = var.github_client_id
+  github_client_secret   = var.github_client_secret
 }

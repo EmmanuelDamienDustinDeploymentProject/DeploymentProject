@@ -30,7 +30,9 @@ func TestCalculateAPR(t *testing.T) {
 
 	var data map[string]interface{}
 	jsonBytes, _ := result.Content[0].MarshalJSON()
-	json.Unmarshal(jsonBytes, &data)
+	if err := json.Unmarshal(jsonBytes, &data); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
 
 	splitResponse := strings.Split(data["text"].(string), " ")
 	apr := strings.TrimSuffix(splitResponse[len(splitResponse)-1], ".")
