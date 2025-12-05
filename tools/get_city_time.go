@@ -78,7 +78,7 @@ func (tool *GetCityTime) Register(server *mcp.Server) (mcpToolInstance *mcp.Tool
 
 func init() {
 	tools = append(tools, &GetCityTime{
-		Name: "Get City Time",
+		Name: "get-city-time",
 		Description: "Get the current time in NYC, San Francisco, or Boston",
 	})
 }

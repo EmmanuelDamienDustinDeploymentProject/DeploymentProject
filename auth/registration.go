@@ -28,14 +28,18 @@ func NewRegistrationHandler(config *Config, storage ClientStorage) *Registration
 
 // ServeHTTP implements http.Handler for the /register endpoint
 func (h *RegistrationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[DCR] Registration request received from %s", r.RemoteAddr)
+	
 	// Only allow POST requests
 	if r.Method != http.MethodPost {
+		log.Printf("[DCR] Invalid method: %s", r.Method)
 		h.sendError(w, ErrorInvalidRequest, "Only POST method is allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	// Check if DCR is enabled
 	if !h.config.EnableDCR {
+		log.Printf("[DCR] DCR is not enabled")
 		h.sendError(w, ErrorInvalidRequest, "Dynamic client registration is not enabled", http.StatusForbidden)
 		return
 	}
@@ -43,9 +47,13 @@ func (h *RegistrationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	// Parse request body
 	var req ClientRegistrationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("[DCR] Failed to decode request body: %v", err)
 		h.sendError(w, ErrorInvalidRequest, "Invalid JSON in request body", http.StatusBadRequest)
 		return
 	}
+	
+	log.Printf("[DCR] Registration request: client_name=%s, redirect_uris=%v, grant_types=%v",
+		req.ClientName, req.RedirectURIs, req.GrantTypes)
 
 	// Validate the registration request
 	if err := h.validateRequest(&req); err != nil {
@@ -87,9 +95,12 @@ func (h *RegistrationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	// Store the client
 	if err := h.storage.StoreClient(client); err != nil {
+		log.Printf("[DCR] Failed to store client: %v", err)
 		h.sendError(w, ErrorServerError, "Failed to store client registration", http.StatusInternalServerError)
 		return
 	}
+	
+	log.Printf("[DCR] Successfully registered client: %s (name: %s)", clientID, req.ClientName)
 
 	// Build response
 	response := ClientRegistrationResponse{

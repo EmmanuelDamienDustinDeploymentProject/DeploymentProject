@@ -113,9 +113,46 @@ func (h *AuthorizationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	// Look up client (for DCR clients)
 	client, err := h.clientStorage.GetClient(clientID)
 	if err != nil || client == nil {
-		log.Printf("Unknown client_id: %s", clientID)
-		h.sendError(w, r, redirectURI, clientState, "invalid_client", "Unknown client_id")
-		return
+		// Client not found - check if we should auto-register
+		// This handles clients like VS Code that don't call /register endpoint
+		if h.config.EnableDCR && h.config.AllowPublicClients {
+			// Auto-register the client if redirect_uri is in allowed list
+			if redirectURI != "" && h.config.IsRedirectURIAllowed(redirectURI) {
+				log.Printf("Auto-registering unknown client_id: %s with redirect_uri: %s", clientID, redirectURI)
+				
+				// Create a new client registration
+				newClient := &OAuthClient{
+					ClientID:     clientID,
+					ClientSecret: "", // Public client
+					Metadata: ClientRegistrationRequest{
+						RedirectURIs:            []string{redirectURI},
+						TokenEndpointAuthMethod: "none",
+						GrantTypes:              []string{"authorization_code"},
+						ResponseTypes:           []string{"code"},
+						ClientName:              "Auto-registered MCP Client",
+						Scope:                   "mcp:tools mcp:resources read:user",
+					},
+					CreatedAt: time.Now(),
+				}
+				
+				if err := h.clientStorage.StoreClient(newClient); err != nil {
+					log.Printf("Failed to auto-register client: %v", err)
+					h.sendError(w, r, redirectURI, clientState, "server_error", "Failed to register client")
+					return
+				}
+				
+				client = newClient
+				log.Printf("Successfully auto-registered client: %s", clientID)
+			} else {
+				log.Printf("Unknown client_id: %s (redirect_uri %s not in allowed list)", clientID, redirectURI)
+				h.sendError(w, r, redirectURI, clientState, "invalid_client", "Unknown client_id and redirect_uri not allowed for auto-registration")
+				return
+			}
+		} else {
+			log.Printf("Unknown client_id: %s (auto-registration disabled)", clientID)
+			h.sendError(w, r, redirectURI, clientState, "invalid_client", "Unknown client_id")
+			return
+		}
 	}
 
 	// Validate redirect_uri

@@ -46,6 +46,41 @@ func NewInMemoryClientStorage() *InMemoryClientStorage {
 	}
 }
 
+// NewInMemoryClientStorageWithDefaults creates a new in-memory client storage
+// with optional default clients for common MCP clients
+func NewInMemoryClientStorageWithDefaults() *InMemoryClientStorage {
+	storage := NewInMemoryClientStorage()
+	
+	// Pre-register a generic VS Code client with standard redirect URIs
+	// This allows any VS Code instance to authenticate without explicit registration
+	vsCodeClient := &OAuthClient{
+		ClientID:     "vscode",
+		ClientSecret: "", // Public client - no secret
+		Metadata: ClientRegistrationRequest{
+			RedirectURIs: []string{
+				"http://127.0.0.1:33418",
+				"http://127.0.0.1:33418/",
+				"http://127.0.0.1:33418/done",
+				"https://vscode.dev/redirect",
+			},
+			TokenEndpointAuthMethod: "none", // Public client
+			GrantTypes: []string{
+				"authorization_code",
+			},
+			ResponseTypes: []string{
+				"code",
+			},
+			ClientName: "Visual Studio Code",
+			Scope:      "mcp:tools mcp:resources read:user",
+		},
+		CreatedAt: time.Now(),
+	}
+	
+	_ = storage.StoreClient(vsCodeClient)
+	
+	return storage
+}
+
 // StoreClient stores a registered OAuth client
 func (s *InMemoryClientStorage) StoreClient(client *OAuthClient) error {
 	if client == nil {

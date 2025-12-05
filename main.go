@@ -14,6 +14,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"EmmanuelDamienDustinDeploymentProject/DeploymentProject/auth"
+	"EmmanuelDamienDustinDeploymentProject/DeploymentProject/prompts"
 	"EmmanuelDamienDustinDeploymentProject/DeploymentProject/tools"
 )
 
@@ -78,12 +79,14 @@ func runServer(url string) {
 		return
 	}
 
-	// Initialize OAuth components
-	clientStorage := auth.NewInMemoryClientStorage()
+	// Initialize OAuth components with default clients
+	clientStorage := auth.NewInMemoryClientStorageWithDefaults()
 	tokenStorage := auth.NewInMemoryTokenStorage()
 	tokenCache := auth.NewInMemoryTokenCache()
 	githubVerifier := auth.NewGitHubTokenVerifier(config, tokenCache, tokenStorage)
 	middleware := auth.NewMiddleware(config, githubVerifier)
+	
+	log.Printf("Pre-registered OAuth client: vscode (client_id can be used in MCP config)")
 
 	// Create authorization handler with state store
 	authHandler := auth.NewAuthorizationHandler(config, clientStorage)
@@ -101,6 +104,7 @@ func runServer(url string) {
 	}, nil)
 
 	tools.RegisterAll(server)
+	prompts.RegisterAll(server)
 
 	// Create the streamable HTTP handler with session timeout
 	// Sessions are needed for GET requests (SSE streaming)
@@ -171,6 +175,7 @@ func runServerWithoutAuth(url string) {
 	}, nil)
 
 	tools.RegisterAll(server)
+	prompts.RegisterAll(server)
 
 	// Create the streamable HTTP handler
 	handler := mcp.NewStreamableHTTPHandler(func(req *http.Request) *mcp.Server {
