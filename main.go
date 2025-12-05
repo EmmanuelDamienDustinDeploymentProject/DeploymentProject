@@ -53,8 +53,6 @@ func runServer(url string) {
 	handlerWithLogging := loggingHandler(mux)
 
 	log.Printf("MCP server listening on %s", url)
-	log.Printf("Available tool: Get City Time (cities: nyc, sf, boston)")
-	log.Printf("Available tool: Get Fortune")
 	log.Printf("Health check available at /health")
 
 	// Start the HTTP server with logging handler.
