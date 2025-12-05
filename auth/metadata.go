@@ -80,7 +80,8 @@ func (h *AuthServerMetadataHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 		Issuer:                h.config.ServerURL,
 		AuthorizationEndpoint: h.config.ServerURL + "/oauth/authorize",
 		TokenEndpoint:         h.config.ServerURL + "/oauth/token",
-		RegistrationEndpoint:  h.config.GetRegistrationEndpointURL(),
+		// Don't advertise registration endpoint - clients must use the GitHub OAuth App credentials
+		// provided by the server operator
 		ScopesSupported:       h.config.ScopesSupported,
 		ResponseTypesSupported: []string{
 			"code", // Authorization code flow

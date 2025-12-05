@@ -18,38 +18,49 @@ import (
 )
 
 // GitHubTokenVerifier implements the MCP SDK's auth.TokenVerifier interface
-// It validates GitHub access tokens by calling the GitHub API
+// It validates access tokens issued by our OAuth server
 type GitHubTokenVerifier struct {
-	config     *Config
-	httpClient *http.Client
-	cache      TokenCache
+	config       *Config
+	httpClient   *http.Client
+	cache        TokenCache
+	tokenStorage TokenStorage
 }
 
 // NewGitHubTokenVerifier creates a new GitHub token verifier
-func NewGitHubTokenVerifier(config *Config, cache TokenCache) *GitHubTokenVerifier {
+func NewGitHubTokenVerifier(config *Config, cache TokenCache, tokenStorage TokenStorage) *GitHubTokenVerifier {
 	return &GitHubTokenVerifier{
 		config: config,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
-		cache: cache,
+		cache:        cache,
+		tokenStorage: tokenStorage,
 	}
 }
 
 // Verify implements auth.TokenVerifier
 // This is called by the MCP SDK's RequireBearerToken middleware
 func (v *GitHubTokenVerifier) Verify(ctx context.Context, token string, req *http.Request) (*auth.TokenInfo, error) {
-	// Check cache first
+	// Look up token in our storage
+	tokenInfo, err := v.tokenStorage.GetAccessToken(token)
+	if err != nil {
+		return nil, fmt.Errorf("%w: token not found or expired", auth.ErrInvalidToken)
+	}
+
+	// Check cache for GitHub token validation
+	cacheKey := "github:" + tokenInfo.GitHubAccessToken
 	if v.cache != nil {
-		if cached, found := v.cache.Get(token); found {
+		if cached, found := v.cache.Get(cacheKey); found {
 			if cached.Valid {
 				// Convert our TokenValidationResult to SDK's TokenInfo
 				return &auth.TokenInfo{
-					Scopes:     cached.Scopes,
-					Expiration: cached.ExpiresAt,
+					Scopes:     strings.Split(tokenInfo.Scope, " "),
+					Expiration: tokenInfo.ExpiresAt,
 					Extra: map[string]any{
 						"github_user": cached.GitHubUser,
 						"subject":     cached.Subject,
+						"client_id":   tokenInfo.ClientID,
+						"resource":    tokenInfo.Resource,
 					},
 				}, nil
 			}
@@ -58,12 +69,12 @@ func (v *GitHubTokenVerifier) Verify(ctx context.Context, token string, req *htt
 		}
 	}
 
-	// Validate with GitHub API
-	result := v.validateWithGitHub(ctx, token)
+	// Validate GitHub token with GitHub API
+	result := v.validateWithGitHub(ctx, tokenInfo.GitHubAccessToken)
 
-	// Cache the result
+	// Cache the GitHub validation result
 	if v.cache != nil {
-		_ = v.cache.Set(token, result, v.config.TokenExpiryDuration)
+		_ = v.cache.Set(cacheKey, result, v.config.TokenExpiryDuration)
 	}
 
 	if !result.Valid {
@@ -72,11 +83,13 @@ func (v *GitHubTokenVerifier) Verify(ctx context.Context, token string, req *htt
 
 	// Convert to SDK's TokenInfo
 	return &auth.TokenInfo{
-		Scopes:     result.Scopes,
-		Expiration: result.ExpiresAt,
+		Scopes:     strings.Split(tokenInfo.Scope, " "),
+		Expiration: tokenInfo.ExpiresAt,
 		Extra: map[string]any{
 			"github_user": result.GitHubUser,
 			"subject":     result.Subject,
+			"client_id":   tokenInfo.ClientID,
+			"resource":    tokenInfo.Resource,
 		},
 	}, nil
 }

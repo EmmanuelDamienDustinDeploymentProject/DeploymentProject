@@ -244,7 +244,9 @@ func (c *Config) GetResourceMetadataURL() string {
 
 // GetRegistrationEndpointURL returns the URL for the dynamic client registration endpoint
 func (c *Config) GetRegistrationEndpointURL() string {
-	if !c.EnableDCR {
+	// DCR is not compatible with external authorization servers like GitHub
+	// Clients must use the GitHub OAuth App credentials provided by the server operator
+	if !c.EnableDCR || c.OAuthEnabled {
 		return ""
 	}
 	return c.ServerURL + "/register"
