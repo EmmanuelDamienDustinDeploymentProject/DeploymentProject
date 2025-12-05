@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"EmmanuelDamienDustinDeploymentProject/DeploymentProject/auth"
+	"EmmanuelDamienDustinDeploymentProject/DeploymentProject/chat"
 	"EmmanuelDamienDustinDeploymentProject/DeploymentProject/prompts"
 	"EmmanuelDamienDustinDeploymentProject/DeploymentProject/tools"
 )
@@ -97,14 +99,31 @@ func runServer(url string) {
 	// Create token endpoint handler
 	tokenHandler := auth.NewTokenEndpointHandler(config, clientStorage, tokenStorage)
 
+	// Create chat server
+	chatServer := chat.NewServer()
+	log.Printf("Chat server initialized")
+
 	// Create an MCP server
 	server := mcp.NewServer(&mcp.Implementation{
-		Name:    "time-server",
+		Name:    "chat-relay-server",
 		Version: "1.0.0",
 	}, nil)
 
 	tools.RegisterAll(server)
 	prompts.RegisterAll(server)
+	
+	// Register chat tools
+	chatSendTool := tools.NewSendChatMessage(chatServer)
+	chatSendTool.Register(server)
+	log.Printf("Registered tool: %s", chatSendTool.Name)
+	
+	chatHistoryTool := tools.NewGetChatHistory(chatServer)
+	chatHistoryTool.Register(server)
+	log.Printf("Registered tool: %s", chatHistoryTool.Name)
+	
+	chatUsersTool := tools.NewListActiveUsers(chatServer)
+	chatUsersTool.Register(server)
+	log.Printf("Registered tool: %s", chatUsersTool.Name)
 
 	// Create the streamable HTTP handler with session timeout
 	// Sessions are needed for GET requests (SSE streaming)
@@ -114,29 +133,67 @@ func runServer(url string) {
 		SessionTimeout: 30 * time.Minute, // Automatically close idle sessions after 30 minutes
 	})
 
-	// Wrap MCP handler with OAuth authentication, but allow GET requests with session ID
-	// GET requests are used for SSE streaming and may not include Authorization header
+	// Wrap MCP handler with OAuth authentication and chat connection tracking
 	authenticatedHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sessionID := r.Header.Get("Mcp-Session-Id")
+		
 		// Allow GET requests that have a session ID (for SSE streaming)
-		if r.Method == http.MethodGet && r.Header.Get("Mcp-Session-Id") != "" {
+		if r.Method == http.MethodGet && sessionID != "" {
 			handler.ServeHTTP(w, r)
 			return
 		}
+		
 		// All other requests require OAuth authentication
-		middleware.RequireAuth([]string{"mcp:tools"})(handler).ServeHTTP(w, r)
+		authMiddleware := middleware.RequireAuth([]string{"mcp:tools"})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Extract GitHub username from token info and register chat connection
+			if tokenInfo := r.Context().Value("tokenInfo"); tokenInfo != nil {
+				if ti, ok := tokenInfo.(*auth.AccessTokenInfo); ok {
+					if sessionID != "" {
+						// Get GitHub username (use ClientID as fallback)
+						githubUser := ti.ClientID
+						
+						// Try to get actual GitHub user from the token verifier
+						if ti.GitHubAccessToken != "" {
+							if result, err := githubVerifier.Verify(r.Context(), ti.GitHubAccessToken, r); err == nil {
+								if ghUser, ok := result.Extra["github_user"].(*auth.GitHubUserInfo); ok {
+									githubUser = ghUser.Login
+								}
+							}
+						}
+						
+						// Register or update connection
+						if _, exists := chatServer.GetConnection(sessionID); !exists {
+							chatServer.RegisterConnection(sessionID, githubUser)
+							log.Printf("Registered chat connection for user: %s (session: %s)", githubUser, sessionID)
+						}
+						
+						// Add sessionID to context for tools to use
+						ctx := context.WithValue(r.Context(), "sessionID", sessionID)
+						r = r.WithContext(ctx)
+					}
+				}
+			}
+			
+			handler.ServeHTTP(w, r)
+		}))
+		
+		authMiddleware.ServeHTTP(w, r)
 	})
 
 	// Set up routes
 	mux := http.NewServeMux()
 
-	// Public endpoints (no authentication required)
-	mux.HandleFunc("/health", healthCheckHandler)
-	mux.Handle("/.well-known/oauth-protected-resource",
-		auth.NewProtectedResourceMetadataHandler(config))
-	mux.Handle("/.well-known/oauth-authorization-server",
-		auth.NewAuthServerMetadataHandler(config))
-
-	// DCR endpoint (if enabled)
+	log.Printf("MCP server listening on %s", url)
+	log.Printf("OAuth 2.1 authentication enabled with GitHub")
+	log.Printf("Protected Resource Metadata: /.well-known/oauth-protected-resource")
+	log.Printf("Authorization Server Metadata: /.well-known/oauth-authorization-server")
+	log.Printf("Available tool: Get City Time (cities: nyc, sf, boston)")
+	log.Printf("Available tool: Get Fortune")
+	log.Printf("Available tool: APR Calculator")
+	log.Printf("Available tool: Send Chat Message")
+	log.Printf("Available tool: Get Chat History")
+	log.Printf("Available tool: List Active Users")
+	log.Printf("Health check available at /health")
 	if config.EnableDCR {
 		mux.Handle("/register", auth.NewRegistrationHandler(config, clientStorage))
 		log.Printf("Dynamic Client Registration enabled at /register")
