@@ -140,7 +140,6 @@ resource "aws_ecs_task_definition" "main" {
       environment = var.ecs_task_environment_variables
       essential   = true
       portMappings = [
-        # TOD: We might need to change this when we use our own code instead of nginx
         {
           containerPort = 8080
           hostPort      = 8080
@@ -159,7 +158,7 @@ resource "aws_ecs_task_definition" "main" {
   ])
   lifecycle {
     ignore_changes = [
-      container_definitions[0].environment // We need to set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET manually, and we don't want terraform to try to reset them
+      container_definitions # Ignore changes to environment variables (GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are set manually via AWS CLI)
     ]
   }
 }
