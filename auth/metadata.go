@@ -80,8 +80,8 @@ func (h *AuthServerMetadataHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 		Issuer:                h.config.ServerURL,
 		AuthorizationEndpoint: h.config.ServerURL + "/oauth/authorize",
 		TokenEndpoint:         h.config.ServerURL + "/oauth/token",
-		// Don't advertise registration endpoint - clients must use the GitHub OAuth App credentials
-		// provided by the server operator
+		// Include registration endpoint if DCR is enabled
+		RegistrationEndpoint:  h.config.GetRegistrationEndpointURL(),
 		ScopesSupported:       h.config.ScopesSupported,
 		ResponseTypesSupported: []string{
 			"code", // Authorization code flow
@@ -93,6 +93,7 @@ func (h *AuthServerMetadataHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 		TokenEndpointAuthMethodsSupported: []string{
 			"client_secret_post",
 			"client_secret_basic",
+			"none", // Support public clients (like VS Code)
 		},
 		CodeChallengeMethodsSupported: []string{
 			"S256", // PKCE with SHA-256

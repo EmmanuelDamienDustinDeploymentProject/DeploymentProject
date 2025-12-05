@@ -64,6 +64,8 @@ func DefaultConfig() *Config {
 		ServerURL: "http://localhost:8080",
 		AllowedRedirectURIs: []string{
 			"http://127.0.0.1:33418",
+			"http://127.0.0.1:33418/",
+			"http://127.0.0.1:33418/done",
 			"https://vscode.dev/redirect",
 		},
 		ScopesSupported: []string{
@@ -244,18 +246,25 @@ func (c *Config) GetResourceMetadataURL() string {
 
 // GetRegistrationEndpointURL returns the URL for the dynamic client registration endpoint
 func (c *Config) GetRegistrationEndpointURL() string {
-	// DCR is not compatible with external authorization servers like GitHub
-	// Clients must use the GitHub OAuth App credentials provided by the server operator
-	if !c.EnableDCR || c.OAuthEnabled {
+	// Return registration endpoint if DCR is enabled
+	if !c.EnableDCR {
 		return ""
 	}
 	return c.ServerURL + "/register"
 }
 
 // IsRedirectURIAllowed checks if a redirect URI is in the allowed list
+// It normalizes URIs by removing trailing slashes for comparison
 func (c *Config) IsRedirectURIAllowed(uri string) bool {
+	// Normalize the incoming URI
+	normalizedURI := strings.TrimSuffix(uri, "/")
+	
 	for _, allowed := range c.AllowedRedirectURIs {
-		if uri == allowed {
+		// Normalize the allowed URI
+		normalizedAllowed := strings.TrimSuffix(allowed, "/")
+		
+		// Check exact match or normalized match
+		if uri == allowed || normalizedURI == normalizedAllowed {
 			return true
 		}
 	}

@@ -1,0 +1,88 @@
+2025/12/05 12:55:48 Pre-registered OAuth client: vscode (for Visual Studio Code)
+2025/12/05 12:55:48 Registered tool: Calculate APR
+2025/12/05 12:55:48 Registered tool: Get City Time
+2025/12/05 12:55:48 Registered tool: Get Fortune
+2025/12/05 12:55:48 Dynamic Client Registration enabled at /register
+2025/12/05 12:55:48 MCP server listening on 0.0.0.0:8080
+2025/12/05 12:55:48 OAuth 2.1 authentication enabled with GitHub
+2025/12/05 12:55:48 Protected Resource Metadata: /.well-known/oauth-protected-resource
+2025/12/05 12:55:48 Authorization Server Metadata: /.well-known/oauth-authorization-server
+2025/12/05 12:55:48 Available tool: Get City Time (cities: nyc, sf, boston)
+2025/12/05 12:55:48 Available tool: Get Fortune
+2025/12/05 12:55:48 Available tool: APR Calculator
+2025/12/05 12:55:48 Health check available at /health
+2025/12/05 12:55:53 [REQUEST] 2025-12-05T12:55:53-06:00 | 127.0.0.1:54227 | POST /
+2025/12/05 12:55:53 [RESPONSE] 2025-12-05T12:55:53-06:00 | 127.0.0.1:54227 | POST / | Status: 401 | Duration: 90.201µs
+2025/12/05 12:55:53 [REQUEST] 2025-12-05T12:55:53-06:00 | 127.0.0.1:54228 | GET /.well-known/oauth-protected-resource
+2025/12/05 12:55:53 [RESPONSE] 2025-12-05T12:55:53-06:00 | 127.0.0.1:54228 | GET /.well-known/oauth-protected-resource | Status: 200 | Duration: 142.73µs
+2025/12/05 12:55:53 [REQUEST] 2025-12-05T12:55:53-06:00 | 127.0.0.1:54227 | GET /.well-known/oauth-authorization-server
+2025/12/05 12:55:53 [RESPONSE] 2025-12-05T12:55:53-06:00 | 127.0.0.1:54227 | GET /.well-known/oauth-authorization-server | Status: 200 | Duration: 97.248µs
+2025/12/05 12:55:56 [REQUEST] 2025-12-05T12:55:56-06:00 | 127.0.0.1:59592 | GET /oauth/authorize
+2025/12/05 12:55:56 Unknown client_id: cWZ6T4dYWrBnfFCIjyT1Cw==
+2025/12/05 12:55:56 [RESPONSE] 2025-12-05T12:55:56-06:00 | 127.0.0.1:59592 | GET /oauth/authorize | Status: 302 | Duration: 146.388µs
+signal: killed
+2025/12/05 13:02:16 Pre-registered OAuth client: vscode (client_id can be used in MCP config)
+2025/12/05 13:02:16 Registered tool: calculate-apr
+2025/12/05 13:02:16 Registered tool: get-city-time
+2025/12/05 13:02:16 Registered tool: get-fortune
+2025/12/05 13:02:16 Dynamic Client Registration enabled at /register
+2025/12/05 13:02:16 MCP server listening on 0.0.0.0:8080
+2025/12/05 13:02:16 OAuth 2.1 authentication enabled with GitHub
+2025/12/05 13:02:16 Protected Resource Metadata: /.well-known/oauth-protected-resource
+2025/12/05 13:02:16 Authorization Server Metadata: /.well-known/oauth-authorization-server
+2025/12/05 13:02:16 Available tool: Get City Time (cities: nyc, sf, boston)
+2025/12/05 13:02:16 Available tool: Get Fortune
+2025/12/05 13:02:16 Available tool: APR Calculator
+2025/12/05 13:02:16 Health check available at /health
+2025/12/05 13:02:19 [REQUEST] 2025-12-05T13:02:19-06:00 | 127.0.0.1:52413 | POST /
+2025/12/05 13:02:19 [RESPONSE] 2025-12-05T13:02:19-06:00 | 127.0.0.1:52413 | POST / | Status: 401 | Duration: 93.499µs
+2025/12/05 13:02:19 [REQUEST] 2025-12-05T13:02:19-06:00 | 127.0.0.1:52414 | GET /.well-known/oauth-protected-resource
+2025/12/05 13:02:19 [RESPONSE] 2025-12-05T13:02:19-06:00 | 127.0.0.1:52414 | GET /.well-known/oauth-protected-resource | Status: 200 | Duration: 168.209µs
+2025/12/05 13:02:19 [REQUEST] 2025-12-05T13:02:19-06:00 | 127.0.0.1:52413 | GET /.well-known/oauth-authorization-server
+2025/12/05 13:02:19 [RESPONSE] 2025-12-05T13:02:19-06:00 | 127.0.0.1:52413 | GET /.well-known/oauth-authorization-server | Status: 200 | Duration: 70.725µs
+2025/12/05 13:02:27 [REQUEST] 2025-12-05T13:02:27-06:00 | 127.0.0.1:54725 | POST /
+2025/12/05 13:02:27 [RESPONSE] 2025-12-05T13:02:27-06:00 | 127.0.0.1:54725 | POST / | Status: 401 | Duration: 39.825µs
+2025/12/05 13:02:27 [REQUEST] 2025-12-05T13:02:27-06:00 | 127.0.0.1:54726 | GET /.well-known/oauth-protected-resource
+2025/12/05 13:02:27 [RESPONSE] 2025-12-05T13:02:27-06:00 | 127.0.0.1:54726 | GET /.well-known/oauth-protected-resource | Status: 200 | Duration: 56.411µs
+2025/12/05 13:02:27 [REQUEST] 2025-12-05T13:02:27-06:00 | 127.0.0.1:54725 | GET /.well-known/oauth-authorization-server
+2025/12/05 13:02:27 [RESPONSE] 2025-12-05T13:02:27-06:00 | 127.0.0.1:54725 | GET /.well-known/oauth-authorization-server | Status: 200 | Duration: 39.284µs
+2025/12/05 13:03:02 Pre-registered OAuth client: vscode (client_id can be used in MCP config)
+2025/12/05 13:03:02 Registered tool: calculate-apr
+2025/12/05 13:03:02 Registered tool: get-city-time
+2025/12/05 13:03:02 Registered tool: get-fortune
+2025/12/05 13:03:02 Dynamic Client Registration enabled at /register
+2025/12/05 13:03:02 MCP server listening on 0.0.0.0:8080
+2025/12/05 13:03:02 OAuth 2.1 authentication enabled with GitHub
+2025/12/05 13:03:02 Protected Resource Metadata: /.well-known/oauth-protected-resource
+2025/12/05 13:03:02 Authorization Server Metadata: /.well-known/oauth-authorization-server
+2025/12/05 13:03:02 Available tool: Get City Time (cities: nyc, sf, boston)
+2025/12/05 13:03:02 Available tool: Get Fortune
+2025/12/05 13:03:02 Available tool: APR Calculator
+2025/12/05 13:03:02 Health check available at /health
+2025/12/05 13:03:04 [REQUEST] 2025-12-05T13:03:04-06:00 | 127.0.0.1:49770 | POST /
+2025/12/05 13:03:04 [RESPONSE] 2025-12-05T13:03:04-06:00 | 127.0.0.1:49770 | POST / | Status: 401 | Duration: 87.015µs
+2025/12/05 13:03:04 [REQUEST] 2025-12-05T13:03:04-06:00 | 127.0.0.1:49771 | GET /.well-known/oauth-protected-resource
+2025/12/05 13:03:04 [RESPONSE] 2025-12-05T13:03:04-06:00 | 127.0.0.1:49771 | GET /.well-known/oauth-protected-resource | Status: 200 | Duration: 136.754µs
+2025/12/05 13:03:04 [REQUEST] 2025-12-05T13:03:04-06:00 | 127.0.0.1:49770 | GET /.well-known/oauth-authorization-server
+2025/12/05 13:03:04 [RESPONSE] 2025-12-05T13:03:04-06:00 | 127.0.0.1:49770 | GET /.well-known/oauth-authorization-server | Status: 200 | Duration: 110.168µs
+2025/12/05 13:03:07 [REQUEST] 2025-12-05T13:03:07-06:00 | 127.0.0.1:58465 | GET /oauth/authorize
+2025/12/05 13:03:07 Auto-registering unknown client_id: cWZ6T4dYWrBnfFCIjyT1Cw== with redirect_uri: http://127.0.0.1:33418/
+2025/12/05 13:03:07 Successfully auto-registered client: cWZ6T4dYWrBnfFCIjyT1Cw==
+2025/12/05 13:03:07 [RESPONSE] 2025-12-05T13:03:07-06:00 | 127.0.0.1:58465 | GET /oauth/authorize | Status: 302 | Duration: 157.61µs
+2025/12/05 13:03:10 [REQUEST] 2025-12-05T13:03:10-06:00 | 127.0.0.1:58465 | GET /oauth/callback
+2025/12/05 13:03:11 [RESPONSE] 2025-12-05T13:03:11-06:00 | 127.0.0.1:58465 | GET /oauth/callback | Status: 302 | Duration: 445.562522ms
+2025/12/05 13:03:11 [REQUEST] 2025-12-05T13:03:11-06:00 | 127.0.0.1:49705 | POST /oauth/token
+2025/12/05 13:03:11 [RESPONSE] 2025-12-05T13:03:11-06:00 | 127.0.0.1:49705 | POST /oauth/token | Status: 200 | Duration: 118.817µs
+2025/12/05 13:03:11 [REQUEST] 2025-12-05T13:03:11-06:00 | 127.0.0.1:49705 | POST /
+2025/12/05 13:03:11 [RESPONSE] 2025-12-05T13:03:11-06:00 | 127.0.0.1:49705 | POST / | Status: 200 | Duration: 343.375409ms | Response Session: BO3US6SEKVEUHX5LPDSQWJEE3W
+2025/12/05 13:03:11 [REQUEST] 2025-12-05T13:03:11-06:00 | 127.0.0.1:49705 | POST / | Session: BO3US6SEKVEUHX5LPDSQWJEE3W
+2025/12/05 13:03:11 [RESPONSE] 2025-12-05T13:03:11-06:00 | 127.0.0.1:49705 | POST / | Status: 200 | Duration: 725.601µs
+2025/12/05 13:03:11 [REQUEST] 2025-12-05T13:03:11-06:00 | 127.0.0.1:49710 | GET / | Session: BO3US6SEKVEUHX5LPDSQWJEE3W
+2025/12/05 13:03:11 [REQUEST] 2025-12-05T13:03:11-06:00 | 127.0.0.1:49714 | POST / | Session: BO3US6SEKVEUHX5LPDSQWJEE3W
+2025/12/05 13:03:11 [RESPONSE] 2025-12-05T13:03:11-06:00 | 127.0.0.1:49714 | POST / | Status: 202 | Duration: 193.418µs
+2025/12/05 13:03:11 [REQUEST] 2025-12-05T13:03:11-06:00 | 127.0.0.1:49715 | POST / | Session: BO3US6SEKVEUHX5LPDSQWJEE3W
+2025/12/05 13:03:11 [RESPONSE] 2025-12-05T13:03:11-06:00 | 127.0.0.1:49715 | POST / | Status: 200 | Duration: 359.482µs
+2025/12/05 13:05:22 [REQUEST] 2025-12-05T13:05:22-06:00 | 127.0.0.1:61909 | DELETE / | Session: BO3US6SEKVEUHX5LPDSQWJEE3W
+2025/12/05 13:05:22 [RESPONSE] 2025-12-05T13:05:22-06:00 | 127.0.0.1:49710 | GET / | Status: 200 | Duration: 2m10.687138154s
+2025/12/05 13:05:22 [RESPONSE] 2025-12-05T13:05:22-06:00 | 127.0.0.1:61909 | DELETE / | Status: 204 | Duration: 818.582µs
+signal: killed

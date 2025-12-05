@@ -66,7 +66,7 @@ func (tool *GetFortune) Register(server *mcp.Server) (mcpToolInstance *mcp.Tool)
 
 func init() {
 	tools = append(tools, &GetFortune{
-		Name: "Get Fortune",
+		Name: "get-fortune",
 		Description: "Gets a random fortune from aphorismcookie.herokuapp.com",
 	})
 }

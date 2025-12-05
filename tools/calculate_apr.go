@@ -61,7 +61,7 @@ func (tool *CalculateAPR) Register(server *mcp.Server) (mcpToolInstance *mcp.Too
 
 func init() {
 	tools = append(tools, &CalculateAPR{
-		Name:        "Calculate APR",
+		Name:        "calculate-apr",
 		Description: "Calculates the simple APR based on total interest paid.",
 	})
 }
