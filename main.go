@@ -135,6 +135,9 @@ func runServer(url string) {
 		auth.NewProtectedResourceMetadataHandler(config))
 	mux.Handle("/.well-known/oauth-authorization-server",
 		auth.NewAuthServerMetadataHandler(config))
+	// Alias for OpenID Connect discovery (VS Code compatibility)
+	mux.Handle("/.well-known/openid-configuration",
+		auth.NewAuthServerMetadataHandler(config))
 
 	// DCR endpoint (if enabled)
 	if config.EnableDCR {
