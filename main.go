@@ -166,10 +166,7 @@ func runServerWithoutAuth(url string) {
 
 	handlerWithLogging := loggingHandler(corsMiddleware(mux))
 
-	log.Printf("MCP server listening on %s (OAuth disabled)", url)
-	log.Printf("Available tool: Get City Time (cities: nyc, sf, boston)")
-	log.Printf("Available tool: Get Fortune")
-	log.Printf("Available tool: APR Calculator")
+	log.Printf("MCP server listening on %s", url)
 	log.Printf("Health check available at /health")
 
 	// Start the HTTP server with logging handler
