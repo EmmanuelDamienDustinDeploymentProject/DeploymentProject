@@ -1,5 +1,10 @@
 # DeploymentProject
 
+![deploy](https://github.com/EmmanuelDamienDustinDeploymentProject/DeploymentProject/actions/workflows/deploy.yml/badge.svg?branch=main)
+![go-build-lint-test](https://github.com/EmmanuelDamienDustinDeploymentProject/DeploymentProject/actions/workflows/go-build-lint-test.yml/badge.svg?branch=main)
+![iac-linting](https://github.com/EmmanuelDamienDustinDeploymentProject/DeploymentProject/actions/workflows/iac-linting.yml/badge.svg?branch=main)
+![trivy](https://github.com/EmmanuelDamienDustinDeploymentProject/DeploymentProject/actions/workflows/trivy.yml/badge.svg?branch=main)
+
 ## Usage
 ```bash
 go run .
@@ -61,6 +66,18 @@ You can run [hadolint](https://github.com/hadolint/hadolint) with Docker like th
 ```bash
 docker run --rm -i hadolint/hadolint < Dockerfile
 ```
+
+#### Security scanning with Trivy
+
+You can run [trivy](https://trivy.dev/) with Docker like this:
+```bash
+docker run --rm -v "$(pwd):/workspace" aquasec/trivy fs \
+  --ignore-unfixed \
+  --severity CRITICAL,HIGH,MEDIUM,LOW \
+  --scanners vuln,secret,misconfig \
+  /workspace
+```
+
 
 ## Libraries
 
