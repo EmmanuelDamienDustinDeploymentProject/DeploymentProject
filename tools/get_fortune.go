@@ -20,7 +20,7 @@ type FortuneAPIResponse struct {
 		Message string `json:"message"`
 	} `json:"data"`
 	Meta struct {
-		Status string `json:"status"`
+		Status int `json:"status"`
 	} `json:"meta"`
 }
 

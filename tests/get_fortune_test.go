@@ -26,7 +26,9 @@ func TestGetFortune(t *testing.T) {
 	var data map[string]interface{}
 
 	jsonBytes, _ := result.Content[0].MarshalJSON()
-	json.Unmarshal(jsonBytes, &data)
+	if err := json.Unmarshal(jsonBytes, &data); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
 
 	if len(data["text"].(string)) < 1 {
 		t.Errorf("Calling tool \"%s\" resulted in a response with 0 characters!", tool.Name)

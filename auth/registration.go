@@ -7,6 +7,7 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
@@ -236,5 +237,7 @@ func (h *RegistrationHandler) sendError(w http.ResponseWriter, errorCode, descri
 		ErrorDescription: description,
 	}
 
-	json.NewEncoder(w).Encode(errorResp)
+	if err := json.NewEncoder(w).Encode(errorResp); err != nil {
+		log.Printf("Failed to encode error response: %v", err)
+	}
 }

@@ -28,7 +28,9 @@ func TestGetCityTimeInNYC(t *testing.T) {
 
 	var data map[string]interface{}
 	jsonBytes, _ := result.Content[0].MarshalJSON()
-	json.Unmarshal(jsonBytes, &data)
+	if err := json.Unmarshal(jsonBytes, &data); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
 
 	if !strings.Contains(data["text"].(string), "New York City") {
 		t.Errorf("Calling tool \"%s\" with \"nyc\" as the city returned the wrong data: %s", tool.Name, data["text"].(string))
@@ -52,7 +54,9 @@ func TestGetCityTimeInBoston(t *testing.T) {
 
 	var data map[string]interface{}
 	jsonBytes, _ := result.Content[0].MarshalJSON()
-	json.Unmarshal(jsonBytes, &data)
+	if err := json.Unmarshal(jsonBytes, &data); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
 
 	if !strings.Contains(data["text"].(string), "Boston") {
 		t.Errorf("Calling tool \"%s\" with \"nyc\" as the city returned the wrong data: %s", tool.Name, data["text"].(string))
@@ -76,7 +80,9 @@ func TestGetCityTimeInSanFrancisco(t *testing.T) {
 
 	var data map[string]interface{}
 	jsonBytes, _ := result.Content[0].MarshalJSON()
-	json.Unmarshal(jsonBytes, &data)
+	if err := json.Unmarshal(jsonBytes, &data); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
 
 	if !strings.Contains(data["text"].(string), "San Francisco") {
 		t.Errorf("Calling tool \"%s\" with \"nyc\" as the city returned the wrong data: %s", tool.Name, data["text"].(string))

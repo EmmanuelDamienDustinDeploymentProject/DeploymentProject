@@ -6,6 +6,7 @@ package auth
 
 import (
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -63,7 +64,11 @@ func (h *TokenProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to exchange token", http.StatusInternalServerError)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Failed to close response body: %v", err)
+		}
+	}()
 
 	// Read response
 	body, err := io.ReadAll(resp.Body)
@@ -75,7 +80,9 @@ func (h *TokenProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Forward GitHub's response
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	if _, err := w.Write(body); err != nil {
+		log.Printf("Failed to write token response: %v", err)
+	}
 }
 
 // AuthorizeProxyHandler proxies authorization requests to GitHub
