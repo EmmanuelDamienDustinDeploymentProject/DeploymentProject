@@ -1,44 +1,11 @@
 # DeploymentProject
 
-A Model Context Protocol (MCP) server with OAuth 2.1 authentication using GitHub as the authorization server.
+![deploy](https://github.com/EmmanuelDamienDustinDeploymentProject/DeploymentProject/actions/workflows/deploy.yml/badge.svg?branch=main)
+![go-build-lint-test](https://github.com/EmmanuelDamienDustinDeploymentProject/DeploymentProject/actions/workflows/go-build-lint-test.yml/badge.svg?branch=main)
+![iac-linting](https://github.com/EmmanuelDamienDustinDeploymentProject/DeploymentProject/actions/workflows/iac-linting.yml/badge.svg?branch=main)
+![trivy](https://github.com/EmmanuelDamienDustinDeploymentProject/DeploymentProject/actions/workflows/trivy.yml/badge.svg?branch=main)
 
-## Features
-
-- **OAuth 2.1 Authentication**: Secure authentication with GitHub as the authorization server
-- **Dynamic Client Registration (DCR)**: Automatic client registration per RFC 7591
-- **PKCE Support**: Proof Key for Code Exchange for enhanced security
-- **VS Code Integration**: Compatible with VS Code's built-in GitHub authentication
-- **Protected Resource Metadata**: RFC 9728 compliant metadata endpoints
-- **MCP Tools**: Time zone information, fortune messages, and APR calculator
-
-## Quick Start
-
-### Prerequisites
-
-1. **GitHub OAuth App**: Create a GitHub OAuth App at https://github.com/settings/developers
-   - Authorization callback URLs:
-     - `http://127.0.0.1:33418`
-     - `https://vscode.dev/redirect`
-
-2. **Environment Variables**: Set up your OAuth configuration
-
-```bash
-# Required
-export MCP_SERVER_URL="http://localhost:8080"
-export GITHUB_CLIENT_ID="your_github_client_id"
-export GITHUB_CLIENT_SECRET="your_github_client_secret"
-
-# Optional (with defaults shown)
-export ENABLE_DCR="true"
-export ALLOW_PUBLIC_CLIENTS="true"
-export ENFORCE_HTTPS="false"
-export TOKEN_EXPIRY_SECONDS="3600"
-export OAUTH_SCOPES_SUPPORTED="mcp:tools,mcp:resources,read:user"
-export OAUTH_REDIRECT_URIS="http://127.0.0.1:33418,https://vscode.dev/redirect"
-```
-
-### Running the Server
-
+## Usage
 ```bash
 go run .
 ```
@@ -231,6 +198,18 @@ You can run [hadolint](https://github.com/hadolint/hadolint) with Docker like th
 ```bash
 docker run --rm -i hadolint/hadolint < Dockerfile
 ```
+
+#### Security scanning with Trivy
+
+You can run [trivy](https://trivy.dev/) with Docker like this:
+```bash
+docker run --rm -v "$(pwd):/workspace" aquasec/trivy fs \
+  --ignore-unfixed \
+  --severity CRITICAL,HIGH,MEDIUM,LOW \
+  --scanners vuln,secret,misconfig \
+  /workspace
+```
+
 
 ## Libraries
 

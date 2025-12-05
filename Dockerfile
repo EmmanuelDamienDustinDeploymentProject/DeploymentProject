@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # https://docs.docker.com/guides/golang/build-images/#multi-stage-builds
-FROM golang:1.24.5 AS build-stage
+FROM golang:1.24 AS build-stage
 
 # https://docs.docker.com/guides/zscaler/#building-with-the-certificate
 # You'll need to create trusted_certs.crt to build locally with zscaler (HP)
@@ -21,13 +21,13 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # copy your source code into the image
-COPY *.go ./
+COPY . .
 
 # Now, to compile your application
 RUN CGO_ENABLED=0 GOOS=linux go build -o /docker
 
 # Deploy the application binary into a lean image
-FROM gcr.io/distroless/base-debian11@sha256:ac69aa622ea5dcbca0803ca877d47d069f51bd4282d5c96977e0390d7d256455 AS build-release-stage
+FROM gcr.io/distroless/base-debian12@sha256:9e9b50d2048db3741f86a48d939b4e4cc775f5889b3496439343301ff54cdba8 AS build-release-stage
 
 WORKDIR /
 
