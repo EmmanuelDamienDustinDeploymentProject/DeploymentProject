@@ -43,7 +43,7 @@ func (m *Middleware) RequireAuth(scopes []string) func(http.Handler) http.Handle
 		opts,
 	)
 
-	// Wrap the SDK middleware to allow GET requests
+	// Wrap the SDK middleware to allow GET requests and expose tokenInfo
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Allow GET requests to pass through for SSE streaming
@@ -54,7 +54,18 @@ func (m *Middleware) RequireAuth(scopes []string) func(http.Handler) http.Handle
 			}
 
 			// For all other requests (POST, etc.), apply OAuth authentication
-			sdkMiddleware(next).ServeHTTP(w, r)
+			// Wrap the next handler to capture tokenInfo
+			wrappedNext := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// The SDK middleware sets tokenInfo in context with key "tokenInfo"
+				if ti := r.Context().Value("tokenInfo"); ti != nil {
+					// Re-add it to ensure it's available
+					ctx := context.WithValue(r.Context(), "tokenInfo", ti)
+					r = r.WithContext(ctx)
+				}
+				next.ServeHTTP(w, r)
+			})
+			
+			sdkMiddleware(wrappedNext).ServeHTTP(w, r)
 		})
 	}
 }

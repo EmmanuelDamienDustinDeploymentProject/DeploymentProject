@@ -80,8 +80,8 @@ func (h *AuthServerMetadataHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 		Issuer:                h.config.ServerURL,
 		AuthorizationEndpoint: h.config.ServerURL + "/oauth/authorize",
 		TokenEndpoint:         h.config.ServerURL + "/oauth/token",
-		// Include registration endpoint if DCR is enabled
-		RegistrationEndpoint:  h.config.GetRegistrationEndpointURL(),
+		// DCR is deprecated in MCP spec - clients should be pre-registered
+		// RegistrationEndpoint:  h.config.GetRegistrationEndpointURL(),
 		ScopesSupported:       h.config.ScopesSupported,
 		ResponseTypesSupported: []string{
 			"code", // Authorization code flow
