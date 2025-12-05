@@ -183,17 +183,17 @@ func runServer(url string) {
 	// Set up routes
 	mux := http.NewServeMux()
 
-	log.Printf("MCP server listening on %s", url)
-	log.Printf("OAuth 2.1 authentication enabled with GitHub")
-	log.Printf("Protected Resource Metadata: /.well-known/oauth-protected-resource")
-	log.Printf("Authorization Server Metadata: /.well-known/oauth-authorization-server")
-	log.Printf("Available tool: Get City Time (cities: nyc, sf, boston)")
-	log.Printf("Available tool: Get Fortune")
-	log.Printf("Available tool: APR Calculator")
-	log.Printf("Available tool: Send Chat Message")
-	log.Printf("Available tool: Get Chat History")
-	log.Printf("Available tool: List Active Users")
-	log.Printf("Health check available at /health")
+	// Public endpoints (no authentication required)
+	mux.HandleFunc("/health", healthCheckHandler)
+	mux.Handle("/.well-known/oauth-protected-resource",
+		auth.NewProtectedResourceMetadataHandler(config))
+	mux.Handle("/.well-known/oauth-authorization-server",
+		auth.NewAuthServerMetadataHandler(config))
+	// Alias for OpenID Connect discovery (VS Code compatibility)
+	mux.Handle("/.well-known/openid-configuration",
+		auth.NewAuthServerMetadataHandler(config))
+
+	// DCR endpoint (if enabled)
 	if config.EnableDCR {
 		mux.Handle("/register", auth.NewRegistrationHandler(config, clientStorage))
 		log.Printf("Dynamic Client Registration enabled at /register")
