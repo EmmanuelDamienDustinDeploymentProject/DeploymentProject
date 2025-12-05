@@ -10,6 +10,7 @@ on:
 ## GITHUB_TOKEN authentication, add only if you're not going to use a PAT
 permissions:
   contents: write
+  security-events: write
 
 jobs:
   trivy:
@@ -51,6 +52,6 @@ jobs:
           scanners: 'vuln,secret,misconfig'
           skip-setup-trivy: true
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-results.sarif'

@@ -80,9 +80,19 @@ func runServer(url string) {
 
 	// Initialize OAuth components
 	clientStorage := auth.NewInMemoryClientStorage()
+	tokenStorage := auth.NewInMemoryTokenStorage()
 	tokenCache := auth.NewInMemoryTokenCache()
-	githubVerifier := auth.NewGitHubTokenVerifier(config, tokenCache)
+	githubVerifier := auth.NewGitHubTokenVerifier(config, tokenCache, tokenStorage)
 	middleware := auth.NewMiddleware(config, githubVerifier)
+
+	// Create authorization handler with state store
+	authHandler := auth.NewAuthorizationHandler(config, clientStorage)
+
+	// Create callback handler that shares the state store
+	callbackHandler := auth.NewCallbackHandler(config, authHandler.GetStateStore(), tokenStorage)
+
+	// Create token endpoint handler
+	tokenHandler := auth.NewTokenEndpointHandler(config, clientStorage, tokenStorage)
 
 	// Create an MCP server
 	server := mcp.NewServer(&mcp.Implementation{
@@ -128,10 +138,10 @@ func runServer(url string) {
 		log.Printf("Dynamic Client Registration enabled at /register")
 	}
 
-	// OAuth proxy endpoints to avoid CORS issues
-	mux.Handle("/oauth/authorize", auth.NewAuthorizeProxyHandler(config))
-	mux.Handle("/oauth/token", auth.NewTokenProxyHandler(config))
-	mux.Handle("/oauth/callback", auth.NewCallbackHandler(config))
+	// OAuth endpoints (proper OAuth 2.1 flow with DCR support)
+	mux.Handle("/oauth/authorize", authHandler)
+	mux.Handle("/oauth/token", tokenHandler)
+	mux.Handle("/oauth/callback", callbackHandler)
 
 	// Protected MCP endpoint
 	mux.Handle("/", authenticatedHandler)
