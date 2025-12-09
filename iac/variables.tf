@@ -11,3 +11,15 @@ variable "github_client_secret" {
   description = "GitHub OAuth App Client Secret"
   sensitive   = true
 }
+
+variable "aws_region" {
+  type        = string
+  default     = "us-east-1"
+  description = "AWS Region"
+}
+
+variable "domain_name" {
+  type        = string
+  default     = "mcp.alandzes.com"
+  description = "Domain name for the MCP server"
+}

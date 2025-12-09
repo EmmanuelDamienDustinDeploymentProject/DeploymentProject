@@ -5,10 +5,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"strings"
+	"syscall"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -38,8 +42,13 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		// Allow CORS for localhost:6277 (MCP Inspector) and localhost:6274
-		if origin == "http://localhost:6277" || origin == "http://localhost:6274" {
+		allowedOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
+		if allowedOrigins == "" {
+			allowedOrigins = "http://localhost:6277,http://localhost:6274"
+		}
+
+		// Allow CORS for configured origins
+		if origin != "" && strings.Contains(allowedOrigins, origin) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, mcp-protocol-version")
@@ -57,25 +66,25 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func runServer(url string) {
+func runServer(addr string) {
 	// Load OAuth configuration
 	config, err := auth.LoadConfigFromEnv()
 	if err != nil {
 		log.Printf("Warning: Failed to load OAuth config: %v. OAuth will be disabled.", err)
-		runServerWithoutAuth(url)
+		runServerWithoutAuth(addr)
 		return
 	}
 
 	// Check if OAuth is enabled
 	if !config.OAuthEnabled {
 		log.Printf("OAuth is disabled (set OAUTH_ENABLED=true to enable)")
-		runServerWithoutAuth(url)
+		runServerWithoutAuth(addr)
 		return
 	}
 
 	if err := config.Validate(); err != nil {
 		log.Printf("Warning: Invalid OAuth config: %v. OAuth will be disabled.", err)
-		runServerWithoutAuth(url)
+		runServerWithoutAuth(addr)
 		return
 	}
 
@@ -85,7 +94,7 @@ func runServer(url string) {
 	tokenCache := auth.NewInMemoryTokenCache()
 	githubVerifier := auth.NewGitHubTokenVerifier(config, tokenCache, tokenStorage)
 	middleware := auth.NewMiddleware(config, githubVerifier)
-	
+
 	log.Printf("Pre-registered OAuth client: vscode (client_id can be used in MCP config)")
 
 	// Create authorization handler with state store
@@ -155,7 +164,12 @@ func runServer(url string) {
 
 	handlerWithLogging := loggingHandler(corsMiddleware(mux))
 
-	log.Printf("MCP server listening on %s", url)
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: handlerWithLogging,
+	}
+
+	log.Printf("MCP server listening on %s", addr)
 	log.Printf("OAuth 2.1 authentication enabled with GitHub")
 	log.Printf("Protected Resource Metadata: /.well-known/oauth-protected-resource")
 	log.Printf("Authorization Server Metadata: /.well-known/oauth-authorization-server")
@@ -164,13 +178,28 @@ func runServer(url string) {
 	log.Printf("Available tool: APR Calculator")
 	log.Printf("Health check available at /health")
 
-	// Start the HTTP server with logging handler
-	if err := http.ListenAndServe(url, handlerWithLogging); err != nil {
-		log.Fatalf("Server failed: %v", err)
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server failed: %v", err)
+		}
+	}()
+
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
 	}
+
+	log.Println("Server exiting")
 }
 
-func runServerWithoutAuth(url string) {
+func runServerWithoutAuth(addr string) {
 	// Create an MCP server without authentication
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "time-server",
@@ -191,11 +220,31 @@ func runServerWithoutAuth(url string) {
 
 	handlerWithLogging := loggingHandler(corsMiddleware(mux))
 
-	log.Printf("MCP server listening on %s", url)
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: handlerWithLogging,
+	}
+
+	log.Printf("MCP server listening on %s", addr)
 	log.Printf("Health check available at /health")
 
-	// Start the HTTP server with logging handler
-	if err := http.ListenAndServe(url, handlerWithLogging); err != nil {
-		log.Fatalf("Server failed: %v", err)
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server failed: %v", err)
+		}
+	}()
+
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
 	}
+
+	log.Println("Server exiting")
 }

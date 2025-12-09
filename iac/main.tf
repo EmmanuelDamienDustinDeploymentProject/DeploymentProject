@@ -15,7 +15,15 @@ terraform {
 
 # Configure the AWS Provider
 provider "aws" {
-  region = "us-east-1"
+  region = var.aws_region
+
+  default_tags {
+    tags = {
+      Project     = "DeploymentProject"
+      Environment = "Production"
+      ManagedBy   = "Terraform"
+    }
+  }
 }
 
 provider "github" {
@@ -29,11 +37,11 @@ data "github_repository" "main" {
 # Subdomain and certificate for HTTPS
 
 data "aws_route53_zone" "public_zone" {
-  name = "mcp.alandzes.com"
+  name = var.domain_name
 }
 
 resource "aws_acm_certificate" "mcp" {
-  domain_name       = "mcp.alandzes.com"
+  domain_name       = var.domain_name
   validation_method = "DNS"
 
   lifecycle {
@@ -59,7 +67,7 @@ module "ecs_cluster" {
   source           = "./modules/aws-ecs"
   github_repo_name = data.github_repository.main.full_name
   ecs_task_environment_variables = [
-    { "name" : "MCP_SERVER_URL", "value" : "https://mcp.alandzes.com" },
+    { "name" : "MCP_SERVER_URL", "value" : "https://${var.domain_name}" },
     { "name" : "ENFORCE_HTTPS", "value" : "true" },
     { "name" : "OAUTH_ENABLED", "value" : "true" }
   ]

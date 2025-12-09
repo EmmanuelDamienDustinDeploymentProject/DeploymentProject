@@ -1,0 +1,9 @@
+.git
+.github
+.idea
+iac
+tests
+server
+server.log
+Dockerfile
+README.md
