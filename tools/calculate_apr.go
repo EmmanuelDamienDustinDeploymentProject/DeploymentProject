@@ -7,8 +7,10 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-type CalculateAPR struct{
-	Name string
+const paymentsPerYear = 12.0
+
+type CalculateAPR struct {
+	Name        string
 	Description string
 }
 
@@ -27,14 +29,22 @@ func (tool *CalculateAPR) Action(ctx context.Context, req *mcp.CallToolRequest, 
 		return nil, nil, fmt.Errorf("term in years must be greater than 0")
 	}
 	if params.TotalInterest < 0 {
-return nil, nil, fmt.Errorf("total interest cannot be negative")
+		return nil, nil, fmt.Errorf("total interest cannot be negative")
 	}
 
-	totalInterestFraction := params.TotalInterest / params.Principal
-	annualRateDecimal := totalInterestFraction / float64(params.TermInYears)
-	apr := annualRateDecimal * 100
+	totalPayments := float64(params.TermInYears) * paymentsPerYear
+
+	numerator := 2.0 * params.TotalInterest * paymentsPerYear
+	denominator := params.Principal * (totalPayments + 1.0)
+
+	if denominator == 0 {
+		return nil, nil, fmt.Errorf("invalid calculation resulting in zero denominator")
+	}
+
+	apr := (numerator / denominator) * 100
+
 	response := fmt.Sprintf(
-		"A loan of $%.2f with $%.2f total interest over %d years has a simple APR of %.2f%%.",
+		"A loan of $%.2f with $%.2f total interest over %d years (monthly payments assumed) has an estimated APR of %.2f%%.",
 		params.Principal,
 		params.TotalInterest,
 		params.TermInYears,
@@ -50,7 +60,7 @@ return nil, nil, fmt.Errorf("total interest cannot be negative")
 
 func (tool *CalculateAPR) Register(server *mcp.Server) (mcpToolInstance *mcp.Tool) {
 	mcpToolInstance = &mcp.Tool{
-		Name: tool.Name,
+		Name:        tool.Name,
 		Description: tool.Description,
 	}
 

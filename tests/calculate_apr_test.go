@@ -2,9 +2,9 @@ package tests
 
 import (
 	"context"
-	"testing"
 	"encoding/json"
 	"strings"
+	"testing"
 
 	"EmmanuelDamienDustinDeploymentProject/DeploymentProject/tools"
 
@@ -18,9 +18,9 @@ func TestCalculateAPR(t *testing.T) {
 		context.TODO(),
 		&mcp.CallToolRequest{},
 		&tools.CalculateAPRParams{
-			Principal: 1000,
+			Principal:     1000,
 			TotalInterest: 10,
-			TermInYears: 10,
+			TermInYears:   10,
 		},
 	)
 
@@ -37,7 +37,9 @@ func TestCalculateAPR(t *testing.T) {
 	splitResponse := strings.Split(data["text"].(string), " ")
 	apr := strings.TrimSuffix(splitResponse[len(splitResponse)-1], ".")
 
-	if apr != "0.10%" {
+	expectedAPR := "0.20%"
+
+	if apr != expectedAPR {
 		t.Errorf("Calling tool \"%s\" resulted in an incorrect calculation, expected 0.10%% but got %s", tool.Name, apr)
 	}
 }
